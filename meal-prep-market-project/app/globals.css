@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  h1, h2, h3 {
+    @apply font-display;
+  }
+
+  /* Visible keyboard focus everywhere — not just default browser outline styling swapped for a brand color. */
+  :focus-visible {
+    outline: 2px solid theme("colors.ocean");
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* The signature element: a small circular "stamp" badge used on
+     CookCard and ProfileHeader to show tier — In-Home vs Delivery —
+     styled like a market-stall ink stamp rather than a generic pill. */
+  .tier-stamp {
+    @apply inline-flex items-center justify-center rounded-full border-2 border-ink/70 px-3 py-1 font-mono text-[11px] uppercase tracking-wide;
+    transform: rotate(-2deg);
+  }
+}
