@@ -81,7 +81,7 @@ export async function generateMetadata({ params }: CookProfilePageProps): Promis
   const displayName = formatCookDisplayName(data.cook);
   return {
     title: `${displayName} — Gold Coast meal prep`,
-    description: (data.cook as { bio: string | null }).bio ?? `Custom weekly meal prep from ${displayName}, Gold Coast.`,`,
+    description: (data.cook as { bio: string | null }).bio ?? `Custom weekly meal prep from ${displayName}, Gold Coast.`,
   };
 }
 
@@ -102,11 +102,11 @@ export default async function CookProfilePage({ params }: CookProfilePageProps) 
       <ReviewList reviews={reviews} />
       {canAcceptPayment && availableItems.length > 0 && (
         <div className="pt-4">
-          <OrderCheckout cookId={cook.id} businessName={cook.business_name} items={availableItems} />
+          <OrderCheckout cookId={(cook as { id: string }).id} businessName={(cook as { business_name: string }).business_name} items={availableItems} />
         </div>
       )}
       <div className="pt-4">
-        <InquiryForm cookId={cook.id} />
+        <InquiryForm cookId=<InquiryForm cookId={(cook as { id: string }).id} />
       </div>
     </main>
   );
