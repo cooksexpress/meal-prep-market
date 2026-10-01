@@ -58,8 +58,9 @@ async function getCookProfileData(cookId: string) {
 
   const reviewCount = reviews?.length ?? 0;
   const averageRating =
-    reviewCount > 0 ? reviews!.reduce((sum, r) => sum + r.rating, 0) / reviewCount : 0;
-
+    reviewCount > 0
+        ? (reviews as { rating: number }[]).reduce((sum, r) => sum + r.rating, 0) / reviewCount
+        : 0;
   return {
     cook,
     media: media ?? [],
