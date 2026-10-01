@@ -66,7 +66,7 @@ async function getCookProfileData(cookId: string) {
     media: media ?? [],
     packages: packages ?? [],
     reviews: reviews ?? [],
-    canAcceptPayment: vendorAccount?.charges_enabled ?? false,
+    canAcceptPayment: (vendorAccount as { charges_enabled: boolean } | null)?.charges_enabled ?? false,
     averageRating,
     reviewCount,
   };
