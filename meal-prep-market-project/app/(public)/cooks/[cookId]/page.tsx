@@ -106,7 +106,7 @@ export default async function CookProfilePage({ params }: CookProfilePageProps) 
         </div>
       )}
       <div className="pt-4">
-        <InquiryForm cookId=<InquiryForm cookId={(cook as { id: string }).id} />
+        <InquiryForm cookId={(cook as { id: string }).id} />
       </div>
     </main>
   );
