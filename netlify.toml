@@ -1,5 +1,6 @@
 [build]
-  command = "npm run build"
+base = "meal-prep-market-project"
+command = "npm run build"
   publish = ".next"
 
 [[plugins]]
