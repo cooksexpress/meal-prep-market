@@ -92,7 +92,7 @@ export default async function CookProfilePage({ params }: CookProfilePageProps) 
   if (!data) notFound();
 
   const { cook, media, packages, reviews, canAcceptPayment, averageRating, reviewCount } = data;
-  const availableItems = packages.filter((p) => p.is_available);
+  const availableItems = (packages as { is_available: boolean }[]).filter((p) => p.is_available);
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
