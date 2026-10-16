@@ -15,6 +15,7 @@ import { OrderCheckout } from "@/components/cook-profile/OrderCheckout";
 import { ReviewList } from "@/components/cook-profile/ReviewList";
 import { InquiryForm } from "@/components/cook-profile/InquiryForm";
 import { formatCookDisplayName } from "@/lib/utils/formatCookName";
+import type { Cook, CookMedia, Package, Review } from "@/lib/types/database";
 
 interface CookProfilePageProps {
   params: Promise<{ cookId: string }>;
@@ -23,50 +24,59 @@ interface CookProfilePageProps {
 async function getCookProfileData(cookId: string) {
   const supabase = await createClient();
 
-  const { data: cook } = await supabase
+  const { data: cookRaw } = await supabase
     .from("cm_cooks")
     .select("*")
     .eq("id", cookId)
     .eq("is_active", true)
     .single();
 
-  if (!cook) return null;
+  if (!cookRaw) return null;
+  const cook = cookRaw as Cook;
 
-  const [{ data: media }, { data: packages }, { data: reviews }, { data: vendorAccount }] = await Promise.all([
-    supabase
-      .from("cm_cook_media")
-      .select("*")
-      .eq("cook_id", cookId)
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("cm_packages")
-      .select("*")
-      .eq("cook_id", cookId)
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("cm_reviews")
-      .select("*")
-      .eq("cook_id", cookId)
-      .eq("is_hidden", false)
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("cm_vendor_stripe_accounts")
-      .select("charges_enabled")
-      .eq("cook_id", cookId)
-      .maybeSingle(),
-  ]);
+  const [{ data: mediaRaw }, { data: packagesRaw }, { data: reviewsRaw }, { data: vendorAccountRaw }] =
+    await Promise.all([
+      supabase
+        .from("cm_cook_media")
+        .select("*")
+        .eq("cook_id", cookId)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("cm_packages")
+        .select("*")
+        .eq("cook_id", cookId)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("cm_reviews")
+        .select("*")
+        .eq("cook_id", cookId)
+        .eq("is_hidden", false)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("cm_vendor_stripe_accounts")
+        .select("charges_enabled")
+        .eq("cook_id", cookId)
+        .maybeSingle(),
+    ]);
 
-  const reviewCount = reviews?.length ?? 0;
+  // Cast each result to its real, full row type here — once, in one
+  // place — rather than leaving every downstream usage to re-derive
+  // (and potentially narrow) the type itself.
+  const media = (mediaRaw ?? []) as CookMedia[];
+  const packages = (packagesRaw ?? []) as Package[];
+  const reviews = (reviewsRaw ?? []) as Review[];
+  const canAcceptPayment = (vendorAccountRaw as { charges_enabled: boolean } | null)?.charges_enabled ?? false;
+
+  const reviewCount = reviews.length;
   const averageRating =
-    reviewCount > 0
-        ? (reviews as { rating: number }[]).reduce((sum, r) => sum + r.rating, 0) / reviewCount
-        : 0;
+    reviewCount > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount : 0;
+
   return {
     cook,
-    media: media ?? [],
-    packages: packages ?? [],
-    reviews: reviews ?? [],
-    canAcceptPayment: (vendorAccount as { charges_enabled: boolean } | null)?.charges_enabled ?? false,
+    media,
+    packages,
+    reviews,
+    canAcceptPayment,
     averageRating,
     reviewCount,
   };
@@ -81,7 +91,7 @@ export async function generateMetadata({ params }: CookProfilePageProps): Promis
   const displayName = formatCookDisplayName(data.cook);
   return {
     title: `${displayName} — Gold Coast meal prep`,
-    description: (data.cook as { bio: string | null }).bio ?? `Custom weekly meal prep from ${displayName}, Gold Coast.`,
+    description: data.cook.bio ?? `Custom weekly meal prep from ${displayName}, Gold Coast.`,
   };
 }
 
@@ -92,7 +102,7 @@ export default async function CookProfilePage({ params }: CookProfilePageProps) 
   if (!data) notFound();
 
   const { cook, media, packages, reviews, canAcceptPayment, averageRating, reviewCount } = data;
-  const availableItems = (packages as { is_available: boolean }[]).filter((p) => p.is_available);
+  const availableItems = packages.filter((p) => p.is_available);
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
@@ -102,11 +112,11 @@ export default async function CookProfilePage({ params }: CookProfilePageProps) 
       <ReviewList reviews={reviews} />
       {canAcceptPayment && availableItems.length > 0 && (
         <div className="pt-4">
-          <OrderCheckout cookId={(cook as { id: string }).id} businessName={(cook as { business_name: string }).business_name} items={availableItems} />
+          <OrderCheckout cookId={cook.id} businessName={cook.business_name} items={availableItems} />
         </div>
       )}
       <div className="pt-4">
-        <InquiryForm cookId={(cook as { id: string }).id} />
+        <InquiryForm cookId={cook.id} />
       </div>
     </main>
   );
