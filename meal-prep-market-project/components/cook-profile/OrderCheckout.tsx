@@ -8,6 +8,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { Package } from "@/lib/types/database";
 
 interface OrderCheckoutProps {
@@ -172,6 +173,17 @@ export function OrderCheckout({ cookId, businessName, items }: OrderCheckoutProp
             rows={2}
             className="w-full border border-hairline bg-paper px-3 py-2"
           />
+
+          <label className="flex items-start gap-3 text-sm text-ink/80">
+            <input type="checkbox" required className="mt-1 h-4 w-4 accent-ocean" />
+            <span>
+              I agree to the{" "}
+              <Link href="/terms" target="_blank" className="underline">Terms of Service</Link>{" "}
+              and the{" "}
+              <Link href="/disclaimer" target="_blank" className="underline">Food Safety &amp; Liability Disclaimer</Link>
+              , and I understand my order is with {businessName}, not Meal Prep Market.
+            </span>
+          </label>
 
           {errorMessage && (
             <p role="alert" className="font-mono text-sm text-paprika">
