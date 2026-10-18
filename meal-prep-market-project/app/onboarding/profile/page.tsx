@@ -36,14 +36,15 @@ export default async function OnboardingProfilePage() {
       <p className="font-mono text-xs uppercase tracking-wide text-ink/50">Step 3 of 4</p>
       <h1 className="mt-2 font-display text-3xl">Build your profile</h1>
       <p className="mt-3 text-ink/70">
-        This is what clients see when they find you. Add photos of your food, then your menu:
-        the dishes and packs clients can order.
+        This is what clients see when they find you. Add a photo or two about you, then your
+        menu: the dishes and packs clients can order, each with its own photo if you like.
       </p>
 
       <section className="mt-10">
-        <h2 className="font-display text-xl">Your photos</h2>
+        <h2 className="font-display text-xl">About you (optional)</h2>
         <p className="mt-1 text-sm text-ink/60">
-          Add 3–6 photos of your best dishes. They show at the top of your profile.
+          Your logo, a photo of you, or your kitchen. The first photo shows on your listing card.
+          Add dish photos to each item in your menu.
         </p>
         <div className="mt-3">
           <MediaUploader cookId={user.id} initialMedia={media ?? []} />

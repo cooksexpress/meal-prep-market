@@ -11,6 +11,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import type { Package } from "@/lib/types/database";
 
@@ -120,8 +121,13 @@ export function OrderCheckout({ cookId, businessName, items, minOrderMeals }: Or
         <p className="font-mono text-xs uppercase tracking-wide text-ink/60">{title}</p>
         <ul className="mt-2 divide-y divide-hairline border-y border-hairline">
           {groupItems.map((item) => (
-            <li key={item.id} className="flex items-center justify-between gap-4 py-3">
-              <div className="min-w-0">
+            <li key={item.id} className="flex items-center gap-3 py-3">
+              {item.image_url && (
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-hairline">
+                  <Image src={item.image_url} alt={item.name} fill className="object-cover" sizes="64px" />
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
                 <p className="font-medium">{item.name}</p>
                 {item.description && <p className="text-sm text-ink/70">{item.description}</p>}
                 <p className="font-mono text-xs text-gold">

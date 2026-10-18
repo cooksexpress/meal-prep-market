@@ -1,16 +1,17 @@
 // components/onboarding/MediaUploader.tsx
 //
-// Uploads go straight to the `cook-gallery` Storage bucket under a
-// path prefixed with the cook's own auth.uid() — this is what the
-// storage RLS policies (storage-buckets.sql) actually check, not just
-// a frontend convention. A cm_cook_media row is inserted immediately
-// after a successful upload so the gallery renders without a page reload.
+// "About you" photos: the cook's logo, a photo of themselves, or their
+// kitchen. Dish photos live on each menu item instead (MenuEditor).
+// Uploads go through lib/images/uploadImage, which converts HEIC phone
+// photos to JPG and shrinks very large ones. The first photo is also
+// saved as the cook's profile photo, used on homepage cards.
 
 "use client";
 
 import { useState } from "react";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
+import { uploadCookImage, removeCookImage } from "@/lib/images/uploadImage";
 import type { CookMedia } from "@/lib/types/database";
 
 interface MediaUploaderProps {
@@ -18,39 +19,18 @@ interface MediaUploaderProps {
   initialMedia: CookMedia[];
 }
 
-const SUPPORTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-
 export function MediaUploader({ cookId, initialMedia }: MediaUploaderProps) {
   const supabase = createClient();
   const [media, setMedia] = useState<CookMedia[]>(initialMedia);
   const [uploading, setUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  async function uploadOne(file: File, sortOrder: number): Promise<CookMedia | null> {
-    const fileExt = (file.name.split(".").pop() || "jpg").toLowerCase();
-    const filePath = `${cookId}/${crypto.randomUUID()}.${fileExt}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("cook-gallery")
-      .upload(filePath, file, { cacheControl: "3600", upsert: false, contentType: file.type });
-
-    if (uploadError) return null;
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("cook-gallery").getPublicUrl(filePath);
-
-    const { data: newRow, error: insertError } = await supabase
-      .from("cm_cook_media")
-      .insert({ cook_id: cookId, image_url: publicUrl, sort_order: sortOrder })
-      .select()
-      .single();
-
-    if (insertError || !newRow) {
-      await supabase.storage.from("cook-gallery").remove([filePath]);
-      return null;
-    }
-    return newRow;
+  // Keep the profile photo (homepage card) in step with the first photo.
+  async function syncProfilePhoto(next: CookMedia[]) {
+    await supabase
+      .from("cm_cooks")
+      .update({ profile_photo_url: next[0]?.image_url ?? null })
+      .eq("id", cookId);
   }
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -61,53 +41,57 @@ export function MediaUploader({ cookId, initialMedia }: MediaUploaderProps) {
     setUploading(true);
     setErrorMessage(null);
 
-    // Only formats every browser can show. iPhone HEIC photos are
-    // skipped with a clear message rather than saved as a broken image.
-    const supported = files.filter((f) => SUPPORTED_TYPES.includes(f.type));
-    const skipped = files.length - supported.length;
-
+    let current = media;
     let failed = 0;
-    let nextOrder = media.length;
-    for (const file of supported) {
-      const row = await uploadOne(file, nextOrder);
-      if (row) {
-        nextOrder += 1;
-        setMedia((prev) => [...prev, row]);
-      } else {
+
+    for (const file of files) {
+      const uploaded = await uploadCookImage(supabase, cookId, file);
+      if (!uploaded) {
         failed += 1;
+        continue;
       }
+
+      const { data: newRow, error: insertError } = await supabase
+        .from("cm_cook_media")
+        .insert({ cook_id: cookId, image_url: uploaded.publicUrl, sort_order: current.length })
+        .select()
+        .single();
+
+      if (insertError || !newRow) {
+        await removeCookImage(supabase, uploaded.publicUrl);
+        failed += 1;
+        continue;
+      }
+
+      current = [...current, newRow];
+      setMedia(current);
     }
 
-    const problems: string[] = [];
-    if (skipped > 0) {
-      problems.push(
-        `${skipped} photo${skipped > 1 ? "s" : ""} couldn't be added. Please use JPG, PNG, or WebP photos.`
-      );
+    if (current.length !== media.length) {
+      await syncProfilePhoto(current);
     }
-    if (failed > 0) {
-      problems.push(`${failed} photo${failed > 1 ? "s" : ""} didn't upload. Please try again.`);
-    }
-    setErrorMessage(problems.length > 0 ? problems.join(" ") : null);
+
+    setErrorMessage(
+      failed > 0
+        ? `${failed} photo${failed > 1 ? "s" : ""} couldn't be added. Please try a different photo.`
+        : null
+    );
     setUploading(false);
   }
 
   async function handleRemove(item: CookMedia) {
     await supabase.from("cm_cook_media").delete().eq("id", item.id);
-    setMedia((prev) => prev.filter((m) => m.id !== item.id));
-
-    // Best-effort storage cleanup — the path is derivable from the
-    // stored public URL's final two segments (cookId/filename).
-    const pathParts = item.image_url.split("/cook-gallery/");
-    if (pathParts[1]) {
-      await supabase.storage.from("cook-gallery").remove([pathParts[1]]);
-    }
+    const next = media.filter((m) => m.id !== item.id);
+    setMedia(next);
+    await syncProfilePhoto(next);
+    await removeCookImage(supabase, item.image_url);
   }
 
   return (
     <div>
       <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
         {media.map((item) => (
-          <div key={item.id} className="group relative aspect-square overflow-hidden border border-hairline">
+          <div key={item.id} className="relative aspect-square overflow-hidden rounded-xl border border-hairline">
             <Image src={item.image_url} alt="" fill className="object-cover" sizes="150px" />
             <button
               type="button"
@@ -119,11 +103,11 @@ export function MediaUploader({ cookId, initialMedia }: MediaUploaderProps) {
           </div>
         ))}
 
-        <label className="flex aspect-square cursor-pointer flex-col items-center justify-center border border-dashed border-hairline text-center font-mono text-xs text-ink/60 hover:border-ink/40">
+        <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-hairline text-center font-mono text-xs text-ink/60 hover:border-gold hover:text-gold">
           {uploading ? "Uploading…" : "+ Add photos"}
           <input
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
+            accept="image/*,.heic,.heif"
             multiple
             onChange={handleFileChange}
             disabled={uploading}

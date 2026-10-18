@@ -4,6 +4,7 @@
 // online orders yet (clients send an inquiry instead). Cooks who can
 // take payment show the same menu inside OrderCheckout, with +/-.
 
+import Image from "next/image";
 import type { Package } from "@/lib/types/database";
 
 interface PackageListProps {
@@ -18,8 +19,13 @@ function MenuGroup({ title, items }: { title: string; items: Package[] }) {
       <p className="font-mono text-xs uppercase tracking-wide text-ink/60">{title}</p>
       <div className="mt-2 divide-y divide-hairline border-y border-hairline">
         {items.map((item) => (
-          <div key={item.id} className="flex items-baseline justify-between gap-4 py-4">
-            <div>
+          <div key={item.id} className="flex items-start gap-3 py-4">
+            {item.image_url && (
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-hairline">
+                <Image src={item.image_url} alt={item.name} fill className="object-cover" sizes="64px" />
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
               <p className="font-medium">{item.name}</p>
               {item.description && <p className="mt-1 text-sm text-ink/70">{item.description}</p>}
               <div className="mt-1.5 flex flex-wrap gap-1.5">

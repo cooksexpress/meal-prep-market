@@ -6,11 +6,15 @@
 //   - Pack: a bundle of meals at a set price (e.g. 7-meal weekly pack).
 // Cooks can also set a minimum number of meals per order.
 // Everything is stored in cm_packages (item_type = 'dish' | 'pack').
+// Each item can have its own optional photo (image_url), uploaded via
+// lib/images/uploadImage (converts HEIC phone photos, shrinks big ones).
 
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
+import { uploadCookImage, removeCookImage } from "@/lib/images/uploadImage";
 import type { Package } from "@/lib/types/database";
 
 interface MenuEditorProps {
@@ -53,7 +57,11 @@ export function MenuEditor({
   const [price, setPrice] = useState("");
   const [mealCount, setMealCount] = useState("");
   const [dietaryTags, setDietaryTags] = useState("");
-  const [status, setStatus] = useState<"idle" | "submitting" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "submitting" | "error" | "photo-error">("idle");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoBusyId, setPhotoBusyId] = useState<string | null>(null);
+  const [rowError, setRowError] = useState<string | null>(null);
 
   const [minOrder, setMinOrder] = useState(initialMinOrderMeals?.toString() ?? "");
   const [minOrderStatus, setMinOrderStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -76,11 +84,22 @@ export function MenuEditor({
 
     setStatus("submitting");
 
+    let imageUrl: string | null = null;
+    if (photoFile) {
+      const uploaded = await uploadCookImage(supabase, cookId, photoFile, "menu");
+      if (!uploaded) {
+        setStatus("photo-error");
+        return;
+      }
+      imageUrl = uploaded.publicUrl;
+    }
+
     const { data, error } = await supabase
       .from("cm_packages")
       .insert({
         cook_id: cookId,
         item_type: itemType,
+        image_url: imageUrl,
         name: name.trim(),
         description: description.trim() || null,
         indicative_price: priceNumber,
@@ -93,11 +112,13 @@ export function MenuEditor({
       .single();
 
     if (error || !data) {
+      await removeCookImage(supabase, imageUrl);
       setStatus("error");
       return;
     }
 
     setItems((prev) => [...prev, data]);
+    clearPhoto();
     setName("");
     setDescription("");
     setPrice("");
@@ -106,9 +127,63 @@ export function MenuEditor({
     setStatus("idle");
   }
 
+  function clearPhoto() {
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoFile(null);
+    setPhotoPreview(null);
+  }
+
+  function handlePickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoFile(file);
+    // HEIC can't be previewed by most browsers; it still uploads fine.
+    const lower = file.name.toLowerCase();
+    const previewable = !/hei(c|f)/.test(file.type) && !lower.endsWith(".heic") && !lower.endsWith(".heif");
+    setPhotoPreview(previewable ? URL.createObjectURL(file) : null);
+    if (status === "photo-error") setStatus("idle");
+  }
+
+  async function handleChangeItemPhoto(item: Package, e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setPhotoBusyId(item.id);
+    setRowError(null);
+
+    const uploaded = await uploadCookImage(supabase, cookId, file, "menu");
+    if (!uploaded) {
+      setRowError("That photo couldn't be added. Please try a different one.");
+      setPhotoBusyId(null);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("cm_packages")
+      .update({ image_url: uploaded.publicUrl })
+      .eq("id", item.id);
+
+    if (error) {
+      await removeCookImage(supabase, uploaded.publicUrl);
+      setRowError("That photo couldn't be saved. Please try again.");
+      setPhotoBusyId(null);
+      return;
+    }
+
+    const oldUrl = item.image_url;
+    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, image_url: uploaded.publicUrl } : i)));
+    setPhotoBusyId(null);
+    await removeCookImage(supabase, oldUrl);
+  }
+
   async function handleRemove(itemId: string) {
+    const item = items.find((i) => i.id === itemId);
     await supabase.from("cm_packages").delete().eq("id", itemId);
     setItems((prev) => prev.filter((i) => i.id !== itemId));
+    await removeCookImage(supabase, item?.image_url ?? null);
   }
 
   async function handleToggleAvailability(item: Package) {
@@ -145,6 +220,26 @@ export function MenuEditor({
     const itemIsPack = item.item_type === "pack";
     return (
       <li key={item.id} className="flex flex-wrap items-start justify-between gap-4 py-4">
+        <label
+          className="relative flex h-16 w-16 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed border-hairline text-center font-mono text-[10px] leading-tight text-ink/60 hover:border-gold hover:text-gold"
+          aria-label={item.image_url ? `Change photo for ${item.name}` : `Add photo for ${item.name}`}
+        >
+          {item.image_url ? (
+            <Image src={item.image_url} alt="" fill className="object-cover" sizes="64px" />
+          ) : (
+            <span>{photoBusyId === item.id ? "Uploading…" : "+ Photo"}</span>
+          )}
+          {item.image_url && photoBusyId === item.id && (
+            <span className="absolute inset-0 flex items-center justify-center bg-paper/70">…</span>
+          )}
+          <input
+            type="file"
+            accept="image/*,.heic,.heif"
+            className="hidden"
+            disabled={photoBusyId !== null}
+            onChange={(e) => handleChangeItemPhoto(item, e)}
+          />
+        </label>
         <div className="min-w-0 flex-1">
           <p className="font-medium">{item.name}</p>
           {item.description && <p className="mt-0.5 text-sm text-ink/70">{item.description}</p>}
@@ -223,6 +318,12 @@ export function MenuEditor({
         </ul>
       </div>
 
+      {rowError && (
+        <p role="alert" className="font-mono text-sm text-paprika">
+          {rowError}
+        </p>
+      )}
+
       {items.length === 0 ? (
         <p className="text-sm text-ink/50">Your menu is empty. Add your first dish below.</p>
       ) : (
@@ -277,6 +378,28 @@ export function MenuEditor({
             onChange={(e) => setName(e.target.value)}
             className={fieldClass}
           />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <span className={labelClass}>Photo (optional)</span>
+          <div className="flex items-center gap-3">
+            <label className="relative flex h-20 w-20 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed border-hairline text-center font-mono text-[11px] text-ink/60 hover:border-gold hover:text-gold">
+              {photoPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={photoPreview} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span>{photoFile ? "Photo ready" : "+ Add photo"}</span>
+              )}
+              <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={handlePickPhoto} />
+            </label>
+            {photoFile ? (
+              <button type="button" onClick={clearPhoto} className="font-mono text-xs text-paprika underline">
+                Remove photo
+              </button>
+            ) : (
+              <p className="text-sm text-ink/50">A photo of this {isPack ? "pack" : "dish"} helps clients choose.</p>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col gap-1">
@@ -372,6 +495,11 @@ export function MenuEditor({
         {status === "error" && (
           <p role="alert" className="font-mono text-sm text-paprika">
             Couldn&rsquo;t add that. Please try again.
+          </p>
+        )}
+        {status === "photo-error" && (
+          <p role="alert" className="font-mono text-sm text-paprika">
+            That photo couldn&rsquo;t be uploaded. Try a different photo, or add it without one.
           </p>
         )}
       </form>

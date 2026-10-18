@@ -9,11 +9,11 @@ export function PhotoGallery({ media }: { media: CookMedia[] }) {
   return (
     <section aria-labelledby="gallery-heading" className="py-8">
       <h2 id="gallery-heading" className="font-display text-2xl">
-        Past meals
+        From the kitchen
       </h2>
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {media.map((item) => (
-          <div key={item.id} className="relative aspect-square overflow-hidden border border-hairline">
+          <div key={item.id} className="relative aspect-square overflow-hidden rounded-xl border border-hairline">
             <Image
               src={item.image_url}
               alt={item.caption ?? "Meal prepared by this cook"}

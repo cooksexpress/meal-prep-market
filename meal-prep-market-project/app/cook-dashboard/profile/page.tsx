@@ -53,9 +53,10 @@ export default async function CookDashboardProfilePage() {
       />
 
       <section>
-        <h2 className="font-display text-xl">Your photos</h2>
+        <h2 className="font-display text-xl">About you (optional)</h2>
         <p className="mt-1 text-sm text-ink/60">
-          Add 3–6 photos of your best dishes. They show at the top of your profile.
+          Your logo, a photo of you, or your kitchen. The first photo shows on your listing card.
+          Add dish photos to each item in your menu.
         </p>
         <div className="mt-3">
           <MediaUploader cookId={user.id} initialMedia={media ?? []} />

@@ -99,6 +99,7 @@ export type Database = {
           meal_count: number | null;
           indicative_price: number | null;
           item_type: "dish" | "pack";
+          image_url: string | null;
           dietary_tags: string[];
           is_available: boolean;
           sort_order: number;
@@ -112,6 +113,7 @@ export type Database = {
           meal_count?: number | null;
           indicative_price?: number | null;
           item_type?: "dish" | "pack";
+          image_url?: string | null;
           dietary_tags?: string[];
           is_available?: boolean;
           sort_order?: number;
