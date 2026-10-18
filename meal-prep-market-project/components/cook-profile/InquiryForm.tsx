@@ -2,9 +2,8 @@
 //
 // Guest inquiry form — no auth required to submit. POSTs to the
 // submit-inquiry Edge Function (via lib/api/submitInquiry), which
-// creates the client account and fires the magic link server-side.
-// On success this shows a confirmation state rather than redirecting,
-// since the visitor has no session yet at this point.
+// saves the enquiry and emails the cook the customer's details. The
+// customer gets no sign-in email; the cook contacts them directly.
 
 "use client";
 
@@ -12,7 +11,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { submitInquiry } from "@/lib/api/submitInquiry";
 
-export function InquiryForm({ cookId }: { cookId: string }) {
+export function InquiryForm({ cookId, cookName }: { cookId: string; cookName?: string }) {
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -35,8 +34,11 @@ export function InquiryForm({ cookId }: { cookId: string }) {
       setStatus("success");
     } catch (err) {
       setStatus("error");
+      const raw = err instanceof Error ? err.message : "";
       setErrorMessage(
-        err instanceof Error ? err.message : "Something went wrong sending your inquiry."
+        raw && !/fetch|network/i.test(raw)
+          ? raw
+          : "We couldn't send your message just now. Please check your connection and try again."
       );
     }
   }
@@ -44,10 +46,9 @@ export function InquiryForm({ cookId }: { cookId: string }) {
   if (status === "success") {
     return (
       <div className="border border-ocean/40 bg-ocean/5 p-6">
-        <p className="font-display text-xl text-ocean">Inquiry sent</p>
+        <p className="font-display text-xl text-ocean">Message sent!</p>
         <p className="mt-2 text-ink/80">
-          Check your email for a link to follow this conversation — no password needed, just
-          click the link to open your inbox anytime.
+          {cookName ?? "The cook"} has your details and will contact you directly by email or phone.
         </p>
       </div>
     );

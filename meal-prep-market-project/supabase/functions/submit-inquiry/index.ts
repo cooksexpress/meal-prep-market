@@ -51,6 +51,41 @@ function isValidPayload(body: unknown): body is InquiryPayload {
   );
 }
 
+// Finds the customer record for this email, or quietly creates one.
+// No emails are sent to the customer. If the email already belongs to
+// an account (for example a cook), that account is reused.
+async function findOrCreateClient(email: string, name: string, phone: string | null): Promise<string> {
+  const { data: existing, error: lookupError } = await supabaseAdmin
+    .from("cm_clients")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle();
+  if (lookupError) throw lookupError;
+  if (existing) return existing.id;
+
+  let userId: string | null = null;
+  const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
+    email,
+    email_confirm: true,
+    user_metadata: { full_name: name },
+  });
+  if (created?.user) {
+    userId = created.user.id;
+  } else {
+    const { data: foundId, error: rpcError } = await supabaseAdmin.rpc("cm_auth_user_id_by_email", {
+      p_email: email,
+    });
+    if (rpcError || !foundId) throw createError ?? rpcError ?? new Error("Could not find or create customer");
+    userId = foundId as string;
+  }
+
+  const { error: upsertError } = await supabaseAdmin
+    .from("cm_clients")
+    .upsert({ id: userId, full_name: name, email, phone }, { onConflict: "id", ignoreDuplicates: true });
+  if (upsertError) throw upsertError;
+  return userId;
+}
+
 // Paused orders (migration 008). Reopens on the "back" date, Gold Coast time.
 function isPausedNow(cook: { orders_paused?: boolean | null; paused_until?: string | null } | null): boolean {
   if (!cook?.orders_paused) return false;
@@ -114,43 +149,8 @@ serve(async (req: Request) => {
       );
     }
 
-    // 2. Look up an existing client by email.
-    const { data: existingClient, error: lookupError } = await supabaseAdmin
-      .from("cm_clients")
-      .select("id")
-      .eq("email", normalizedEmail)
-      .maybeSingle();
-
-    if (lookupError) throw lookupError;
-
-    let clientId: string;
-
-    if (existingClient) {
-      // 3b. Repeat guest — reuse the existing account.
-      clientId = existingClient.id;
-    } else {
-      // 3a. First-time guest — create the auth user, then the client row.
-      const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email: normalizedEmail,
-        email_confirm: true,
-        user_metadata: { full_name: name },
-      });
-
-      if (createError || !created?.user) {
-        throw createError ?? new Error("Failed to create auth user");
-      }
-
-      clientId = created.user.id;
-
-      const { error: insertClientError } = await supabaseAdmin.from("cm_clients").insert({
-        id: clientId,
-        full_name: name,
-        email: normalizedEmail,
-        phone: phone ?? null,
-      });
-
-      if (insertClientError) throw insertClientError;
-    }
+    // 2. Customer record (quiet, no email to the customer).
+    const clientId = await findOrCreateClient(normalizedEmail, name, phone ?? null);
 
     // 4. Log the inquiry (client_id always populated).
     const { data: inquiry, error: inquiryError } = await supabaseAdmin
@@ -168,28 +168,16 @@ serve(async (req: Request) => {
 
     if (inquiryError) throw inquiryError;
 
-    // 5. Fire the magic link so the client can log in passwordlessly.
-    const { error: otpError } = await supabaseAdmin.auth.signInWithOtp({
-      email: normalizedEmail,
-      options: { emailRedirectTo: `${SITE_URL}/inbox` },
-    });
-
-    if (otpError) {
-      // Non-fatal: the inquiry is already saved and the cook will still
-      // be notified. Log for visibility but don't fail the request.
-      console.error("Magic link send failed:", otpError.message);
-    } else {
-      await supabaseAdmin
-        .from("cm_inquiries")
-        .update({ magic_link_sent_at: new Date().toISOString() })
-        .eq("id", inquiry.id);
-    }
-
-    // 6. Notify the cook (separate concern — see notify-cook function).
+    // 5. Notify the cook (separate concern — see notify-cook function).
     //    Fire-and-forget here; failures shouldn't block the client's response.
-    supabaseAdmin.functions
-      .invoke("notify-cook", { body: { inquiry_id: inquiry.id } })
-      .catch((err) => console.error("Cook notification invoke failed:", err));
+    try {
+      const { error: notifyError } = await supabaseAdmin.functions.invoke("notify-cook", {
+        body: { inquiry_id: inquiry.id },
+      });
+      if (notifyError) console.error("Cook notification failed:", notifyError);
+    } catch (err) {
+      console.error("Cook notification invoke failed:", err);
+    }
 
     return new Response(JSON.stringify({ success: true, inquiry_id: inquiry.id }), {
       status: 200,

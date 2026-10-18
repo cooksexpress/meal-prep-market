@@ -2,7 +2,7 @@
 //
 // POST /functions/v1/create-order-checkout
 // Public endpoint (checkout is a guest flow) using the ANON KEY only.
-// Reuses the exact guest-first magic-link account pattern from
+// Reuses the quiet customer-record pattern from
 // submit-inquiry, so a customer who orders gets the same passwordless
 // account/order-history access as an inquiry.
 //
@@ -81,6 +81,41 @@ function isValidPayload(body: unknown): body is OrderPayload {
     /\S+@\S+\.\S+/.test(b.customer_email) &&
     (b.fulfilment === undefined || b.fulfilment === "delivery" || b.fulfilment === "pickup")
   );
+}
+
+// Finds the customer record for this email, or quietly creates one.
+// No emails are sent to the customer. If the email already belongs to
+// an account (for example a cook), that account is reused.
+async function findOrCreateClient(email: string, name: string, phone: string | null): Promise<string> {
+  const { data: existing, error: lookupError } = await supabaseAdmin
+    .from("cm_clients")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle();
+  if (lookupError) throw lookupError;
+  if (existing) return existing.id;
+
+  let userId: string | null = null;
+  const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
+    email,
+    email_confirm: true,
+    user_metadata: { full_name: name },
+  });
+  if (created?.user) {
+    userId = created.user.id;
+  } else {
+    const { data: foundId, error: rpcError } = await supabaseAdmin.rpc("cm_auth_user_id_by_email", {
+      p_email: email,
+    });
+    if (rpcError || !foundId) throw createError ?? rpcError ?? new Error("Could not find or create customer");
+    userId = foundId as string;
+  }
+
+  const { error: upsertError } = await supabaseAdmin
+    .from("cm_clients")
+    .upsert({ id: userId, full_name: name, email, phone }, { onConflict: "id", ignoreDuplicates: true });
+  if (upsertError) throw upsertError;
+  return userId;
 }
 
 // Paused orders (migration 008). Reopens on the "back" date, Gold Coast time.
@@ -217,34 +252,8 @@ serve(async (req: Request) => {
 
     const applicationFeeAmount = Math.round(subtotal * (PLATFORM_FEE_PERCENT / 100) * 100); // cents
 
-    // 3. Guest-first client account — identical pattern to
-    //    submit-inquiry: look up by email, create if new, reuse if not.
-    const { data: existingClient } = await supabaseAdmin
-      .from("cm_clients")
-      .select("id")
-      .eq("email", normalizedEmail)
-      .maybeSingle();
-
-    let clientId: string;
-    if (existingClient) {
-      clientId = existingClient.id;
-    } else {
-      const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email: normalizedEmail,
-        email_confirm: true,
-        user_metadata: { full_name: customer_name },
-      });
-      if (createError || !created?.user) throw createError ?? new Error("Failed to create auth user");
-      clientId = created.user.id;
-
-      const { error: insertClientError } = await supabaseAdmin.from("cm_clients").insert({
-        id: clientId,
-        full_name: customer_name,
-        email: normalizedEmail,
-        phone: customer_phone ?? null,
-      });
-      if (insertClientError) throw insertClientError;
-    }
+    // 3. Customer record (quiet, no email to the customer).
+    const clientId = await findOrCreateClient(normalizedEmail, customer_name, customer_phone ?? null);
 
     // 4. Create the order row FIRST (status: pending) so we have a
     //    stable id and full customer detail captured before Stripe is
@@ -328,13 +337,6 @@ serve(async (req: Request) => {
       .from("cm_orders")
       .update({ stripe_checkout_session_id: session.id })
       .eq("id", order.id);
-
-    // 6. Fire the same magic link pattern as submit-inquiry, so the
-    //    customer can view order history passwordlessly afterward.
-    await supabaseAdmin.auth.signInWithOtp({
-      email: normalizedEmail,
-      options: { emailRedirectTo: `${SITE_URL}/auth/callback?redirect_to=/inbox` },
-    });
 
     return new Response(JSON.stringify({ url: session.url }), {
       status: 200,

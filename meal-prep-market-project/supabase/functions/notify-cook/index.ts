@@ -40,14 +40,20 @@ function isValidPayload(body: unknown): body is NotifyPayload {
   return typeof b.inquiry_id === "string" && b.inquiry_id.length > 0;
 }
 
-async function sendEmail(to: string, subject: string, html: string) {
+async function sendEmail(to: string, subject: string, html: string, replyTo?: string) {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${RESEND_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
+    body: JSON.stringify({
+      from: `Meal Prep Market <${FROM_EMAIL}>`,
+      to,
+      subject,
+      html,
+      ...(replyTo ? { reply_to: replyTo } : {}),
+    }),
   });
 
   if (!res.ok) {
@@ -134,28 +140,37 @@ serve(async (req: Request) => {
     const cookEmail = cookAuthUser.user.email;
 
     // 2. Send the notification.
-    const subject = `New inquiry from ${inquiry.client_name} — Meal Prep Market`;
+    const esc = (v: string) =>
+      v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const clientName = esc(inquiry.client_name);
+    const clientEmail = esc(inquiry.client_email);
+    const phoneRaw = inquiry.client_phone ? String(inquiry.client_phone) : "";
+    const phoneHtml = phoneRaw
+      ? `<a href="tel:${esc(phoneRaw.replace(/[^0-9+]/g, ""))}" style="color:#B8913F;">${esc(phoneRaw)}</a>`
+      : "Not provided";
+    const messageHtml = esc(inquiry.message).replace(/\n/g, "<br>");
+
+    const subject = `New enquiry from ${inquiry.client_name} - Meal Prep Market`;
     const html = `
-      <p>Hi ${cook.business_name},</p>
-      <p>You've received a new inquiry through Meal Prep Market:</p>
-      <table cellpadding="4">
-        <tr><td><strong>Name:</strong></td><td>${inquiry.client_name}</td></tr>
-        <tr><td><strong>Email:</strong></td><td>${inquiry.client_email}</td></tr>
-        <tr><td><strong>Phone:</strong></td><td>${inquiry.client_phone ?? "Not provided"}</td></tr>
-      </table>
-      <p><strong>Message:</strong></p>
-      <p>${inquiry.message}</p>
-      <p>
-        Reply directly to this client at ${inquiry.client_email}, or view the
-        inquiry in your <a href="${SITE_URL}/dashboard/inquiries">Meal Prep Market dashboard</a>.
-      </p>
-      <p style="color:#888;font-size:12px;">
-        Meal Prep Market is an advertising directory only. All booking
-        arrangements and payment are handled directly between you and the client.
-      </p>
+      <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#1A1815;max-width:560px;">
+        <p>Hi ${esc(cook.business_name)},</p>
+        <p>Great news, you have a new enquiry through Meal Prep Market. Here are the customer's details so you can contact them directly:</p>
+        <table cellpadding="6" style="border-collapse:collapse;">
+          <tr><td><strong>Name</strong></td><td>${clientName}</td></tr>
+          <tr><td><strong>Email</strong></td><td><a href="mailto:${clientEmail}" style="color:#B8913F;">${clientEmail}</a></td></tr>
+          <tr><td><strong>Phone</strong></td><td>${phoneHtml}</td></tr>
+        </table>
+        <p><strong>Their message:</strong></p>
+        <p style="background:#F5EFE3;padding:12px;border-radius:8px;">${messageHtml}</p>
+        <p>You can simply press <strong>Reply</strong> to email them back, or give them a call.</p>
+        <p>The Meal Prep Market team</p>
+        <p style="color:#888;font-size:12px;">
+          Meal Prep Market is a directory only. Bookings and payments are arranged directly between you and your customer.
+        </p>
+      </div>
     `;
 
-    await sendEmail(cookEmail, subject, html);
+    await sendEmail(cookEmail, subject, html, inquiry.client_email);
 
     // 3. Stamp the inquiry as notified.
     const { error: updateError } = await supabaseAdmin

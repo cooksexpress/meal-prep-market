@@ -123,7 +123,7 @@ export default async function CookProfilePage({ params }: CookProfilePageProps) 
       <ReviewList reviews={reviews} />
       {!paused && (
         <div className="pt-4">
-          <InquiryForm cookId={cook.id} />
+          <InquiryForm cookId={cook.id} cookName={formatCookDisplayName(cook)} />
         </div>
       )}
     </main>
