@@ -7,6 +7,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { SignOutButton } from "@/components/auth/SignOutButton";
+import { BackButton } from "@/components/shared/BackButton";
 
 const links = [
   { href: "/cook-dashboard", label: "Overview" },
@@ -29,9 +30,12 @@ export default async function CookDashboardLayout({ children }: { children: Reac
       <nav className="border-b border-hairline">
         <div className="mx-auto max-w-4xl px-4 py-4 sm:px-6">
           <div className="flex items-center justify-between gap-3">
-            <Link href="/" className="font-display text-lg">
-              Meal Prep <span className="italic text-gold">Market</span>
-            </Link>
+            <div className="flex min-w-0 items-center gap-3">
+              <BackButton />
+              <Link href="/" className="font-display text-lg">
+                Meal Prep <span className="italic text-gold">Market</span>
+              </Link>
+            </div>
             <div className="flex items-center gap-4 text-xs">
               {user && (
                 <Link href={`/cooks/${user.id}`} className="text-gold underline">

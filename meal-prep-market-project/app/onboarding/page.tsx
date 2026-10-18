@@ -11,10 +11,10 @@ import { EmailCodeSignIn } from "@/components/auth/EmailCodeSignIn";
 export default function OnboardingEntryPage() {
   return (
     <main className="mx-auto max-w-md px-6 py-16">
-      <h1 className="font-display text-4xl">List your cooking on Meal Prep Market</h1>
+      <h1 className="font-display text-4xl">Welcome, cooks</h1>
       <p className="mt-3 text-ink/70">
-        Free to list for your first 3 months, no card needed. No password either: we&rsquo;ll
-        email you a code to get started.
+        Enter your email to list your cooking (free for your first 3 months) or to sign in to
+        your listing. We&rsquo;ll email you a code, no password needed.
       </p>
       <div className="mt-8">
         <EmailCodeSignIn mode="signup" />

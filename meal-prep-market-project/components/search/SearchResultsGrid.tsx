@@ -18,10 +18,6 @@ import { CookCard } from "./CookCard";
 
 interface SearchResultsGridProps {
   searchParams: {
-    tier?: string;
-    cuisine?: string;
-    dietary?: string;
-    maxPrice?: string;
     q?: string;
   };
 }
@@ -51,19 +47,6 @@ export async function SearchResultsGrid({ searchParams }: SearchResultsGridProps
     .eq("is_active", true)
     .order("created_at", { ascending: false });
 
-  if (searchParams.tier) {
-    query = query.eq("tier", searchParams.tier);
-  }
-  if (searchParams.cuisine) {
-    query = query.contains("cuisine_tags", [searchParams.cuisine]);
-  }
-  if (searchParams.dietary) {
-    query = query.contains("dietary_specialty_tags", [searchParams.dietary]);
-  }
-  if (searchParams.maxPrice) {
-    query = query.lte("price_range_min", Number(searchParams.maxPrice));
-  }
-
   if (searchParams.q) {
     const keyword = sanitizeForIlike(searchParams.q.trim());
     // Union three sources of a match into one OR clause: bio text,
@@ -77,7 +60,10 @@ export async function SearchResultsGrid({ searchParams }: SearchResultsGridProps
     // the two tag clauses here and instead pre-filter by tag match in
     // a separate query the same way packageMatchedCookIds works below.
     const orClauses = [
+      `business_name.ilike.%${keyword}%`,
       `bio.ilike.%${keyword}%`,
+      `delivery_areas.ilike.%${keyword}%`,
+      `pickup_area.ilike.%${keyword}%`,
       `cuisine_tags::text.ilike.%${keyword}%`,
       `dietary_specialty_tags::text.ilike.%${keyword}%`,
     ];
@@ -101,7 +87,7 @@ export async function SearchResultsGrid({ searchParams }: SearchResultsGridProps
     return (
       <div className="py-16 text-center">
         <p className="font-mono text-xs uppercase tracking-wide text-ink/50">0 cooks found</p>
-        <p className="mt-2 font-display text-2xl">No cooks match those filters yet</p>
+        <p className="mt-2 font-display text-2xl">No cooks match that search yet</p>
         <p className="mt-2 text-ink/70">Try widening your search, or check back soon — new cooks join every week.</p>
       </div>
     );

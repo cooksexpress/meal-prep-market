@@ -206,26 +206,17 @@ export function EmailCodeSignIn({ mode }: EmailCodeSignInProps) {
         disabled={busy}
         className="w-full rounded-full bg-gold px-6 py-3 font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
       >
-        {busy ? "Sending…" : mode === "signup" ? "Get started" : "Email me a sign-in code"}
+        {busy ? "Sending…" : mode === "signup" ? "Continue" : "Email me a sign-in code"}
       </button>
 
-      <p className="text-center text-sm text-ink/60">
-        {mode === "signup" ? (
-          <>
-            Already listed?{" "}
-            <Link href="/login" className="text-gold underline">
-              Sign in
-            </Link>
-          </>
-        ) : (
-          <>
-            New cook?{" "}
-            <Link href="/onboarding" className="text-gold underline">
-              List your cooking
-            </Link>
-          </>
-        )}
-      </p>
+      {mode === "signin" && (
+        <p className="text-center text-sm text-ink/60">
+          New cook?{" "}
+          <Link href="/onboarding" className="text-gold underline">
+            List your cooking
+          </Link>
+        </p>
+      )}
     </form>
   );
 }

@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCookHome } from "@/lib/auth/cookHome";
 import { EmailCodeSignIn } from "@/components/auth/EmailCodeSignIn";
 
-export const metadata = { title: "Sign in | Meal Prep Market" };
+export const metadata = { title: "Cook sign in" };
 
 export default async function LoginPage() {
   const supabase = await createClient();
@@ -23,7 +23,7 @@ export default async function LoginPage() {
 
   return (
     <main className="mx-auto max-w-md px-6 py-16">
-      <h1 className="font-display text-4xl">Sign in</h1>
+      <h1 className="font-display text-4xl">Cook sign in</h1>
       <p className="mt-3 text-ink/70">
         No password needed. Enter your email and we&rsquo;ll send you a code to sign in.
       </p>

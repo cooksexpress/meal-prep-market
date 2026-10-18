@@ -13,17 +13,12 @@ import { SearchResultsGrid } from "@/components/search/SearchResultsGrid";
 import { ResultsGridSkeleton } from "@/components/search/ResultsGridSkeleton";
 
 interface HomePageProps {
-  searchParams: Promise<{
-    tier?: string;
-    cuisine?: string;
-    dietary?: string;
-    maxPrice?: string;
-    q?: string;
-  }>;
+  searchParams: Promise<{ q?: string }>;
 }
 
 export default async function HomePage({ searchParams }: HomePageProps) {
-  const params = await searchParams;
+  const { q } = await searchParams;
+  const params = { q };
 
   return (
     <div className="mx-auto max-w-6xl px-6">

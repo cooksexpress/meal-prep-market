@@ -3,6 +3,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Public_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
+import { NavTracker } from "@/components/shared/NavTracker";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body
         className={`${fraunces.variable} ${publicSans.variable} ${plexMono.variable} font-body bg-paper text-ink antialiased`}
       >
+        <NavTracker />
         {children}
       </body>
     </html>
