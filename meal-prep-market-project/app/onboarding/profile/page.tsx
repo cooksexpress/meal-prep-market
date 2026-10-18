@@ -63,7 +63,7 @@ export default async function OnboardingProfilePage() {
       </section>
 
       <section className="mt-10 border-t border-hairline pt-10">
-        <ProfileForm cookId={user.id} initial={cook} redirectTo="/onboarding/billing" submitLabel="Continue to billing" />
+        <ProfileForm cookId={user.id} initial={cook} redirectTo="/onboarding/billing" submitLabel="Continue" />
       </section>
     </main>
   );

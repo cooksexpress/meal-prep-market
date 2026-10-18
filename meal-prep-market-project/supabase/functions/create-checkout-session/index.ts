@@ -90,17 +90,52 @@ serve(async (req: Request) => {
       );
     }
 
+    // Free trials start without a card (cm_start_free_trial), so a cook
+    // may subscribe during their trial, after it ran out, or (rarely)
+    // without ever starting one. Work out how much free time is left.
+    const { data: existing, error: existingError } = await supabaseAsUser
+      .from("cm_subscriptions")
+      .select("status, trial_end_at, stripe_subscription_id")
+      .eq("cook_id", cookId)
+      .maybeSingle();
+
+    if (existingError) throw existingError;
+
+    if (
+      existing?.stripe_subscription_id &&
+      ["trialing", "active", "past_due", "grace_period"].includes(existing.status)
+    ) {
+      return new Response(
+        JSON.stringify({ error: "You're already subscribed. Use 'Manage card and invoices' instead." }),
+        { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+      );
+    }
+
+    const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {
+      metadata: { cook_id: cookId },
+    };
+
+    if (!existing) {
+      subscriptionData.trial_period_days = TRIAL_DAYS;
+    } else if (existing.status === "trialing" && existing.trial_end_at) {
+      // Keep their original trial end date so they're never charged
+      // early. Stripe needs a trial end at least 48 hours away; with
+      // less than that left, billing simply starts now.
+      const trialEndSeconds = Math.floor(new Date(existing.trial_end_at).getTime() / 1000);
+      const minimumSeconds = Math.floor(Date.now() / 1000) + 48 * 60 * 60 + 300;
+      if (trialEndSeconds > minimumSeconds) {
+        subscriptionData.trial_end = trialEndSeconds;
+      }
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer_email: user.email,
       line_items: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
-      subscription_data: {
-        trial_period_days: TRIAL_DAYS,
-        metadata: { cook_id: cookId },
-      },
+      subscription_data: subscriptionData,
       metadata: { cook_id: cookId },
-      success_url: `${SITE_URL}/onboarding/complete?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${SITE_URL}/onboarding/billing?canceled=1`,
+      success_url: `${SITE_URL}/cook-dashboard/billing?subscribed=1`,
+      cancel_url: `${SITE_URL}/cook-dashboard/billing?canceled=1`,
     });
 
     return new Response(JSON.stringify({ url: session.url }), {

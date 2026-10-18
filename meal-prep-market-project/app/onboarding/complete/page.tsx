@@ -1,20 +1,18 @@
 // app/onboarding/complete/page.tsx
 //
-// Stripe redirects here after checkout. The subscription.created
-// webhook is what actually flips is_active to true — that may land a
-// few seconds after this page renders, so this is deliberately framed
-// as "you're set up" rather than "you're live", since the listing
-// might not be publicly visible in search for a brief moment yet.
+// Shown after the cook starts their free trial (onboarding step 4).
+// The listing is live straight away; no card is needed until they
+// choose to subscribe from Dashboard > Billing.
 
 import Link from "next/link";
 
 export default function OnboardingCompletePage() {
   return (
     <main className="mx-auto max-w-lg px-6 py-24 text-center">
-      <p className="font-display text-3xl text-ocean">You&rsquo;re all set up</p>
+      <p className="font-display text-3xl text-gold">You&rsquo;re live!</p>
       <p className="mt-3 text-ink/70">
-        Your trial has started and your listing is being activated — this usually takes just a
-        few seconds. You&rsquo;ll start receiving inquiries by email as clients find you.
+        Your 90-day free trial has started and clients can now find you. You&rsquo;ll get an email
+        whenever someone sends you an inquiry or order.
       </p>
       <Link
         href="/cook-dashboard"

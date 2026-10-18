@@ -134,19 +134,26 @@ serve(async (req: Request) => {
         }
 
         // Upsert: this may be the first time we see this subscription,
-        // or it may follow an earlier row created at trial start.
+        // or it may follow the row created when the free trial started
+        // (no card). Keep that row's trial dates if Stripe has none,
+        // e.g. when a cook subscribes after their trial already ended.
+        const { data: priorRow } = await supabaseAdmin
+          .from("cm_subscriptions")
+          .select("trial_start_at, trial_end_at")
+          .eq("cook_id", cookId)
+          .maybeSingle();
+
         const { error } = await supabaseAdmin.from("cm_subscriptions").upsert(
           {
             cook_id: cookId,
             status: sub.status === "trialing" ? "trialing" : "active",
             stripe_customer_id: sub.customer as string,
             stripe_subscription_id: sub.id,
-            trial_start_at: sub.trial_start
-              ? new Date(sub.trial_start * 1000).toISOString()
-              : new Date().toISOString(),
+            trial_start_at: priorRow?.trial_start_at
+              ?? (sub.trial_start ? new Date(sub.trial_start * 1000).toISOString() : new Date().toISOString()),
             trial_end_at: sub.trial_end
               ? new Date(sub.trial_end * 1000).toISOString()
-              : addDays(new Date(), 90),
+              : priorRow?.trial_end_at ?? new Date().toISOString(),
             current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
             grace_period_ends_at: null,
             updated_at: new Date().toISOString(),

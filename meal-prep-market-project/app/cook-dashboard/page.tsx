@@ -19,7 +19,7 @@ export default async function CookDashboardOverviewPage() {
     supabase.from("cm_cooks").select("first_name, business_name, is_active").eq("id", user.id).single(),
     supabase
       .from("cm_subscriptions")
-      .select("status, trial_end_at, grace_period_ends_at")
+      .select("status, trial_end_at, grace_period_ends_at, stripe_subscription_id")
       .eq("cook_id", user.id)
       .maybeSingle(),
     supabase
@@ -45,6 +45,8 @@ export default async function CookDashboardOverviewPage() {
         status={subscription?.status ?? null}
         trialEndAt={subscription?.trial_end_at ?? null}
         gracePeriodEndsAt={subscription?.grace_period_ends_at ?? null}
+        hasSubscription={Boolean(subscription?.stripe_subscription_id)}
+        showSubscribeLink
       />
 
       <section>

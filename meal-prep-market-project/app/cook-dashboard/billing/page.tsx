@@ -1,23 +1,39 @@
 // app/cook-dashboard/billing/page.tsx
+//
+// Cooks without a Stripe subscription (free trial, or listing hidden
+// after the trial) see "Subscribe", which opens Stripe Checkout. If
+// they subscribe during the trial, Stripe doesn't charge until the
+// trial's original end date. Subscribed cooks manage their card and
+// invoices in the Stripe portal.
 
 "use client";
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { SubscriptionStatusCard } from "@/components/cook-dashboard/SubscriptionStatusCard";
+import {
+  SubscriptionStatusCard,
+  type SubscriptionStatus,
+} from "@/components/cook-dashboard/SubscriptionStatusCard";
 
 interface SubscriptionData {
-  status: "trialing" | "active" | "grace_period" | "canceled" | "delisted";
+  status: SubscriptionStatus;
   trial_end_at: string | null;
   grace_period_ends_at: string | null;
+  stripe_subscription_id: string | null;
 }
 
 export default function CookDashboardBillingPage() {
   const supabase = createClient();
+  const [justSubscribed, setJustSubscribed] = useState(false);
+
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [portalStatus, setPortalStatus] = useState<"idle" | "redirecting" | "error">("idle");
+  const [actionStatus, setActionStatus] = useState<"idle" | "redirecting" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setJustSubscribed(new URLSearchParams(window.location.search).get("subscribed") === "1");
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -28,7 +44,7 @@ export default function CookDashboardBillingPage() {
 
       const { data } = await supabase
         .from("cm_subscriptions")
-        .select("status, trial_end_at, grace_period_ends_at")
+        .select("status, trial_end_at, grace_period_ends_at, stripe_subscription_id")
         .eq("cook_id", user.id)
         .maybeSingle();
 
@@ -38,8 +54,8 @@ export default function CookDashboardBillingPage() {
     load();
   }, [supabase]);
 
-  async function handleManageBilling() {
-    setPortalStatus("redirecting");
+  async function goToStripe(functionName: "create-checkout-session" | "create-portal-session") {
+    setActionStatus("redirecting");
     setErrorMessage(null);
 
     const {
@@ -47,46 +63,61 @@ export default function CookDashboardBillingPage() {
     } = await supabase.auth.getSession();
 
     if (!session) {
-      setPortalStatus("error");
-      setErrorMessage("Your session expired — please log in again.");
+      setActionStatus("error");
+      setErrorMessage("Your session expired. Please log in again.");
       return;
     }
 
     const functionsUrl = process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL!;
-    const res = await fetch(`${functionsUrl}/create-portal-session`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    });
+    try {
+      const res = await fetch(`${functionsUrl}/${functionName}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      const body = await res.json();
 
-    const body = await res.json();
+      if (!res.ok || !body.url) {
+        setActionStatus("error");
+        setErrorMessage(body?.error ?? "Couldn't open Stripe. Please try again.");
+        return;
+      }
 
-    if (!res.ok || !body.url) {
-      setPortalStatus("error");
-      setErrorMessage(body?.error ?? "Couldn't open billing portal.");
-      return;
+      window.location.href = body.url;
+    } catch {
+      setActionStatus("error");
+      setErrorMessage("Couldn't open Stripe. Please try again.");
     }
-
-    window.location.href = body.url;
   }
 
   if (loading) {
     return <p className="text-ink/60">Loading…</p>;
   }
 
+  const hasSubscription = Boolean(subscription?.stripe_subscription_id);
+  const canSubscribe =
+    !hasSubscription || subscription?.status === "canceled" || subscription?.status === "delisted";
+
   return (
     <div className="space-y-8">
       <div>
         <h1 className="font-display text-3xl">Billing</h1>
-        <p className="mt-1 text-ink/70">Manage your subscription, payment method, and invoices.</p>
+        <p className="mt-1 text-ink/70">Your free trial, subscription, card, and invoices.</p>
       </div>
+
+      {justSubscribed && (
+        <p className="rounded-2xl border border-gold/40 bg-gold/5 p-4 text-sm text-ink/80">
+          Thanks for subscribing! It can take a minute for the status below to update.
+        </p>
+      )}
 
       <SubscriptionStatusCard
         status={subscription?.status ?? null}
         trialEndAt={subscription?.trial_end_at ?? null}
         gracePeriodEndsAt={subscription?.grace_period_ends_at ?? null}
+        hasSubscription={hasSubscription}
       />
 
       {errorMessage && (
@@ -95,13 +126,32 @@ export default function CookDashboardBillingPage() {
         </p>
       )}
 
-      <button
-        onClick={handleManageBilling}
-        disabled={portalStatus === "redirecting"}
-        className="border border-ocean px-6 py-3 font-mono text-sm text-ocean transition-colors hover:bg-ocean hover:text-paper disabled:opacity-50"
-      >
-        {portalStatus === "redirecting" ? "Redirecting…" : "Manage billing in Stripe"}
-      </button>
+      {subscription && canSubscribe && (
+        <div>
+          <button
+            onClick={() => goToStripe("create-checkout-session")}
+            disabled={actionStatus === "redirecting"}
+            className="rounded-full bg-gold px-6 py-3 font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {actionStatus === "redirecting" ? "Opening Stripe…" : "Subscribe"}
+          </button>
+          {subscription.status === "trialing" && (
+            <p className="mt-2 text-sm text-ink/60">
+              You won&rsquo;t be charged until your free trial ends.
+            </p>
+          )}
+        </div>
+      )}
+
+      {hasSubscription && !canSubscribe && (
+        <button
+          onClick={() => goToStripe("create-portal-session")}
+          disabled={actionStatus === "redirecting"}
+          className="rounded-full border border-gold px-6 py-3 text-sm text-gold transition-colors hover:bg-gold hover:text-paper disabled:opacity-50"
+        >
+          {actionStatus === "redirecting" ? "Opening Stripe…" : "Manage card and invoices"}
+        </button>
+      )}
     </div>
   );
 }
