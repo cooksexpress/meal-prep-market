@@ -7,12 +7,14 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        paper: "#EDE6D6",     // background — warm sand, not the cream-cliché
-        ink: "#1B2420",       // primary text — warm near-black
-        ocean: "#1F5C56",     // brand / primary actions
-        paprika: "#C7521F",   // CTA accent, used sparingly
-        butter: "#E8B84B",    // highlight / rating stars / badges
-        hairline: "#D8CDB4",  // dividers, borders
+        paper: "#0E0D0B",     // background: warm black
+        ink: "#F5EFE3",       // primary text: soft cream
+        ocean: "#D4AF63",     // brand / links / prices: champagne gold
+        paprika: "#E8826A",   // alerts and warnings: soft coral
+        butter: "#D4AF63",    // rating stars: gold
+        hairline: "#2B2720",  // dividers, borders
+        gold: "#D4AF63",      // main buttons and highlights
+        surface: "#1A1815",   // cards
       },
       fontFamily: {
         display: ["var(--font-fraunces)", "serif"],

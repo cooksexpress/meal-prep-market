@@ -22,7 +22,7 @@ export function CookCard({ cook, averageRating, reviewCount }: CookCardProps) {
   return (
     <Link
       href={`/cooks/${cook.id}`}
-      className="group block border border-hairline bg-paper transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-ocean"
+      className="group block overflow-hidden rounded-2xl border border-hairline bg-surface transition-colors hover:border-gold/60 focus-visible:outline-2 focus-visible:outline-ocean"
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden border-b border-hairline bg-hairline/40">
         {cook.profile_photo_url ? (
@@ -50,7 +50,7 @@ export function CookCard({ cook, averageRating, reviewCount }: CookCardProps) {
           {cook.cuisine_tags.slice(0, 3).map((tag) => (
             <span
               key={tag}
-              className="border border-hairline px-2 py-0.5 font-mono text-[11px] text-ink/70"
+              className="rounded-full border border-hairline px-2.5 py-0.5 font-mono text-[11px] text-ink/70"
             >
               {tag}
             </span>

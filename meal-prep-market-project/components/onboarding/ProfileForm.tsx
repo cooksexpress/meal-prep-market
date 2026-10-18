@@ -185,7 +185,7 @@ export function ProfileForm({ cookId, initial, redirectTo, submitLabel }: Profil
       <button
         type="submit"
         disabled={status === "submitting"}
-        className="bg-paprika px-6 py-3 font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
+        className="rounded-full bg-gold px-6 py-3 font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
       >
         {status === "submitting"
           ? "Saving…"

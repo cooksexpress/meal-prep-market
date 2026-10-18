@@ -194,7 +194,7 @@ export function OrderCheckout({ cookId, businessName, items }: OrderCheckoutProp
           <button
             type="submit"
             disabled={status === "submitting"}
-            className="w-full bg-paprika px-6 py-3 font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="w-full rounded-full bg-gold px-6 py-3 font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {status === "submitting" ? "Redirecting to payment…" : `Checkout — $${subtotal.toFixed(2)}`}
           </button>

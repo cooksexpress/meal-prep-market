@@ -18,7 +18,7 @@ export default function OnboardingCompletePage() {
       </p>
       <Link
         href="/cook-dashboard"
-        className="mt-8 inline-block bg-paprika px-6 py-3 font-medium text-paper transition-opacity hover:opacity-90"
+        className="mt-8 inline-block rounded-full bg-gold px-6 py-3 font-medium text-paper transition-opacity hover:opacity-90"
       >
         Go to your dashboard
       </Link>

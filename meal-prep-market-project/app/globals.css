@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    color-scheme: dark;
+  }
+
   h1, h2, h3 {
     @apply font-display;
   }
@@ -27,7 +31,7 @@
      CookCard and ProfileHeader to show tier — In-Home vs Delivery —
      styled like a market-stall ink stamp rather than a generic pill. */
   .tier-stamp {
-    @apply inline-flex items-center justify-center rounded-full border-2 border-ink/70 px-3 py-1 font-mono text-[11px] uppercase tracking-wide;
+    @apply inline-flex items-center justify-center rounded-full border-2 border-gold/80 px-3 text-gold py-1 font-mono text-[11px] uppercase tracking-wide;
     transform: rotate(-2deg);
   }
 }

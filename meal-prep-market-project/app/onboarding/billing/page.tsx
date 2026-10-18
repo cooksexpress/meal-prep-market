@@ -67,7 +67,7 @@ export default function OnboardingBillingPage() {
       <button
         onClick={handleStartTrial}
         disabled={status === "redirecting"}
-        className="mt-6 bg-paprika px-6 py-3 font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
+        className="mt-6 rounded-full bg-gold px-6 py-3 font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
       >
         {status === "redirecting" ? "Redirecting…" : "Start free trial"}
       </button>
