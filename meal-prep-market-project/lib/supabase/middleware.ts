@@ -51,8 +51,9 @@ export async function updateSession(request: NextRequest) {
 
   if ((needsClientAuth || needsOnboardingAuth || needsCookAuth || needsAdminAuth) && !user) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/";
-    redirectUrl.searchParams.set("login_required", path);
+    // Send them to the sign-in page rather than the homepage.
+    redirectUrl.pathname = "/login";
+    redirectUrl.search = "";
     return NextResponse.redirect(redirectUrl);
   }
 

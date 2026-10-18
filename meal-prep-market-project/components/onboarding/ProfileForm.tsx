@@ -20,8 +20,6 @@ interface ProfileFormProps {
     | "bio"
     | "cuisine_tags"
     | "dietary_specialty_tags"
-    | "price_range_min"
-    | "price_range_max"
     | "public_contact_email"
     | "public_contact_phone"
   >;
@@ -39,8 +37,6 @@ export function ProfileForm({ cookId, initial, redirectTo, submitLabel }: Profil
   const [bio, setBio] = useState(initial.bio ?? "");
   const [cuisineTags, setCuisineTags] = useState(initial.cuisine_tags.join(", "));
   const [dietaryTags, setDietaryTags] = useState(initial.dietary_specialty_tags.join(", "));
-  const [priceMin, setPriceMin] = useState(initial.price_range_min?.toString() ?? "");
-  const [priceMax, setPriceMax] = useState(initial.price_range_max?.toString() ?? "");
   const [contactEmail, setContactEmail] = useState(initial.public_contact_email ?? "");
   const [contactPhone, setContactPhone] = useState(initial.public_contact_phone ?? "");
   const [status, setStatus] = useState<"idle" | "submitting" | "saved" | "error">("idle");
@@ -62,8 +58,6 @@ export function ProfileForm({ cookId, initial, redirectTo, submitLabel }: Profil
         bio: bio.trim() || null,
         cuisine_tags: parseTags(cuisineTags),
         dietary_specialty_tags: parseTags(dietaryTags),
-        price_range_min: priceMin ? Number(priceMin) : null,
-        price_range_max: priceMax ? Number(priceMax) : null,
         public_contact_email: contactEmail.trim() || null,
         public_contact_phone: contactPhone.trim() || null,
       })
@@ -119,33 +113,6 @@ export function ProfileForm({ cookId, initial, redirectTo, submitLabel }: Profil
             value={dietaryTags}
             onChange={(e) => setDietaryTags(e.target.value)}
             placeholder="Gluten-free, High-protein / macro"
-            className="border border-hairline bg-paper px-3 py-2"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="flex flex-col gap-1">
-          <label htmlFor="price_min" className="font-mono text-xs uppercase tracking-wide text-ink/70">
-            Price from ($/week)
-          </label>
-          <input
-            id="price_min"
-            type="number"
-            value={priceMin}
-            onChange={(e) => setPriceMin(e.target.value)}
-            className="border border-hairline bg-paper px-3 py-2"
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label htmlFor="price_max" className="font-mono text-xs uppercase tracking-wide text-ink/70">
-            Price to ($/week)
-          </label>
-          <input
-            id="price_max"
-            type="number"
-            value={priceMax}
-            onChange={(e) => setPriceMax(e.target.value)}
             className="border border-hairline bg-paper px-3 py-2"
           />
         </div>

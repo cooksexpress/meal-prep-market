@@ -7,6 +7,9 @@
 // Items are single dishes (1 meal each) or packs (a set number of
 // meals). If the cook has a minimum order, checkout stays locked until
 // the client has picked enough meals. The server checks this again.
+// Delivery or pickup: if the cook offers both, the client picks one.
+// Any delivery fee is added to the total (the server works out the
+// fee itself from the cook's settings; this is just the preview).
 
 "use client";
 
@@ -20,6 +23,10 @@ interface OrderCheckoutProps {
   businessName: string;
   items: Package[];
   minOrderMeals: number | null;
+  deliveryMethod: "delivery" | "pickup" | "both" | null;
+  deliveryFee: number | null;
+  pickupArea: string | null;
+  inHome: boolean;
 }
 
 interface CartLine {
@@ -31,7 +38,20 @@ function mealsPerUnit(item: Package): number {
   return item.item_type === "pack" ? Math.max(item.meal_count ?? 1, 1) : 1;
 }
 
-export function OrderCheckout({ cookId, businessName, items, minOrderMeals }: OrderCheckoutProps) {
+export function OrderCheckout({
+  cookId,
+  businessName,
+  items,
+  minOrderMeals,
+  deliveryMethod,
+  deliveryFee,
+  pickupArea,
+  inHome,
+}: OrderCheckoutProps) {
+  const offersChoice = !inHome && deliveryMethod === "both";
+  const [fulfilment, setFulfilment] = useState<"delivery" | "pickup">(
+    !inHome && deliveryMethod === "pickup" ? "pickup" : "delivery"
+  );
   const [cart, setCart] = useState<Record<string, number>>({});
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
@@ -66,6 +86,9 @@ export function OrderCheckout({ cookId, businessName, items, minOrderMeals }: Or
     return sum + (item ? mealsPerUnit(item) * line.quantity : 0);
   }, 0);
   const mealsShort = minOrderMeals ? Math.max(minOrderMeals - totalMeals, 0) : 0;
+  const feeToAdd = fulfilment === "delivery" && deliveryFee ? Number(deliveryFee) : 0;
+  const total = subtotal + feeToAdd;
+  const feeLabel = inHome ? "Travel fee" : "Delivery fee";
 
   async function handleCheckout(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -93,7 +116,8 @@ export function OrderCheckout({ cookId, businessName, items, minOrderMeals }: Or
         customer_name: customerName,
         customer_email: customerEmail,
         customer_phone: customerPhone || undefined,
-        delivery_address: deliveryAddress || undefined,
+        delivery_address: fulfilment === "delivery" ? deliveryAddress || undefined : undefined,
+        fulfilment,
         order_notes: orderNotes || undefined,
       }),
     });
@@ -174,10 +198,17 @@ export function OrderCheckout({ cookId, businessName, items, minOrderMeals }: Or
 
       {cartLines.length > 0 && (
         <form onSubmit={handleCheckout} className="mt-6 space-y-4 border-t border-hairline pt-6">
-          <p className="font-mono text-sm">
-            {totalMeals} {totalMeals === 1 ? "meal" : "meals"} · Subtotal:{" "}
-            <span className="text-ocean">${subtotal.toFixed(2)}</span>
-          </p>
+          <div className="space-y-1 font-mono text-sm">
+            <p>
+              {totalMeals} {totalMeals === 1 ? "meal" : "meals"} · Subtotal:{" "}
+              <span className="text-ocean">${subtotal.toFixed(2)}</span>
+            </p>
+            {feeToAdd > 0 && (
+              <p>
+                {feeLabel}: <span className="text-ocean">${feeToAdd.toFixed(2)}</span>
+              </p>
+            )}
+          </div>
           {mealsShort > 0 && (
             <p className="text-sm text-paprika">
               Add {mealsShort} more {mealsShort === 1 ? "meal" : "meals"} to reach the minimum order.
@@ -209,12 +240,41 @@ export function OrderCheckout({ cookId, businessName, items, minOrderMeals }: Or
             className="w-full border border-hairline bg-paper px-3 py-2"
           />
 
-          <input
-            placeholder="Delivery address (optional)"
-            value={deliveryAddress}
-            onChange={(e) => setDeliveryAddress(e.target.value)}
-            className="w-full border border-hairline bg-paper px-3 py-2"
-          />
+          {offersChoice && (
+            <div className="flex flex-wrap gap-2">
+              {(
+                [
+                  ["delivery", deliveryFee ? `Delivery (+$${Number(deliveryFee).toFixed(2)})` : "Delivery"],
+                  ["pickup", pickupArea ? `Pickup from ${pickupArea}` : "Pickup"],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setFulfilment(value)}
+                  className={`rounded-full border px-4 py-2 text-sm ${
+                    fulfilment === value ? "border-gold bg-gold text-paper" : "border-hairline text-ink/80"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {fulfilment === "delivery" ? (
+            <input
+              placeholder={inHome ? "Your address (where the cooking happens)" : "Delivery address"}
+              required
+              value={deliveryAddress}
+              onChange={(e) => setDeliveryAddress(e.target.value)}
+              className="w-full border border-hairline bg-paper px-3 py-2"
+            />
+          ) : (
+            <p className="text-sm text-ink/70">
+              Pickup{pickupArea ? ` from ${pickupArea}` : ""}. The cook will send you the exact address.
+            </p>
+          )}
 
           <textarea
             placeholder="Order notes — gate code, dietary notes, delivery instructions"
@@ -246,7 +306,7 @@ export function OrderCheckout({ cookId, businessName, items, minOrderMeals }: Or
             disabled={status === "submitting" || mealsShort > 0}
             className="w-full rounded-full bg-gold px-6 py-3 font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
           >
-            {status === "submitting" ? "Redirecting to payment…" : `Checkout — $${subtotal.toFixed(2)}`}
+            {status === "submitting" ? "Redirecting to payment…" : `Checkout — $${total.toFixed(2)}`}
           </button>
 
           <p className="font-mono text-[11px] leading-relaxed text-ink/50">

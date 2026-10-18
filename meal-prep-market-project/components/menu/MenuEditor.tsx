@@ -75,6 +75,15 @@ export function MenuEditor({
     priceNumber > 0 &&
     (!isPack || (Number.isInteger(mealCountNumber) && mealCountNumber >= 2));
 
+  // Tells the cook what's still missing while the Add button is greyed out.
+  const missingHint = !name.trim()
+    ? `Type a ${isPack ? "pack" : "dish"} name to add it.`
+    : price === "" || !(priceNumber > 0)
+      ? "Type a price to add it."
+      : isPack && !(Number.isInteger(mealCountNumber) && mealCountNumber >= 2)
+        ? "Type how many meals are in the pack (2 or more)."
+        : null;
+
   const dishes = items.filter((i) => i.item_type !== "pack");
   const packs = items.filter((i) => i.item_type === "pack");
 
@@ -373,7 +382,7 @@ export function MenuEditor({
           </label>
           <input
             id="menu-name"
-            placeholder={isPack ? "7-meal weekly pack" : "Chicken & rice bowl"}
+            placeholder={isPack ? "e.g. 7-meal weekly pack" : "e.g. Chicken & rice bowl"}
             value={name}
             onChange={(e) => setName(e.target.value)}
             className={fieldClass}
@@ -410,8 +419,8 @@ export function MenuEditor({
             id="menu-description"
             placeholder={
               isPack
-                ? "One of each dish on this week's menu"
-                : "Grilled chicken, brown rice, seasonal greens"
+                ? "e.g. One of each dish on this week's menu"
+                : "e.g. Grilled chicken, brown rice, seasonal greens"
             }
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -431,7 +440,7 @@ export function MenuEditor({
               inputMode="decimal"
               step="0.01"
               min="0"
-              placeholder={isPack ? "89" : "14"}
+              placeholder={isPack ? "e.g. 89" : "e.g. 14"}
               value={price}
               onChange={(e) => setPrice(e.target.value)}
               className={fieldClass}
@@ -448,7 +457,7 @@ export function MenuEditor({
                 inputMode="numeric"
                 step="1"
                 min="2"
-                placeholder="7"
+                placeholder="e.g. 7"
                 value={mealCount}
                 onChange={(e) => setMealCount(e.target.value)}
                 className={fieldClass}
@@ -461,7 +470,7 @@ export function MenuEditor({
               </label>
               <input
                 id="menu-tags"
-                placeholder="Gluten-free"
+                placeholder="e.g. Gluten-free"
                 value={dietaryTags}
                 onChange={(e) => setDietaryTags(e.target.value)}
                 className={fieldClass}
@@ -477,7 +486,7 @@ export function MenuEditor({
             </label>
             <input
               id="menu-tags-pack"
-              placeholder="High-protein, Dairy-free"
+              placeholder="e.g. High-protein, Dairy-free"
               value={dietaryTags}
               onChange={(e) => setDietaryTags(e.target.value)}
               className={fieldClass}
@@ -492,6 +501,7 @@ export function MenuEditor({
         >
           {status === "submitting" ? "Adding…" : isPack ? "Add pack" : "Add dish"}
         </button>
+        {missingHint && status !== "submitting" && <p className="text-sm text-ink/50">{missingHint}</p>}
         {status === "error" && (
           <p role="alert" className="font-mono text-sm text-paprika">
             Couldn&rsquo;t add that. Please try again.
@@ -519,7 +529,7 @@ export function MenuEditor({
             step="1"
             min="1"
             max="100"
-            placeholder="3"
+            placeholder="e.g. 3"
             value={minOrder}
             onChange={(e) => {
               setMinOrder(e.target.value);

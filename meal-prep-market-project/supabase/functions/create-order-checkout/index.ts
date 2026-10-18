@@ -57,6 +57,7 @@ interface OrderPayload {
   customer_phone?: string;
   delivery_address?: string;
   order_notes?: string;
+  fulfilment?: "delivery" | "pickup";
 }
 
 function isValidPayload(body: unknown): body is OrderPayload {
@@ -77,8 +78,17 @@ function isValidPayload(body: unknown): body is OrderPayload {
     typeof b.customer_name === "string" &&
     b.customer_name.trim().length > 0 &&
     typeof b.customer_email === "string" &&
-    /\S+@\S+\.\S+/.test(b.customer_email)
+    /\S+@\S+\.\S+/.test(b.customer_email) &&
+    (b.fulfilment === undefined || b.fulfilment === "delivery" || b.fulfilment === "pickup")
   );
+}
+
+// Paused orders (migration 008). Reopens on the "back" date, Gold Coast time.
+function isPausedNow(cook: { orders_paused?: boolean | null; paused_until?: string | null } | null): boolean {
+  if (!cook?.orders_paused) return false;
+  if (!cook.paused_until) return true;
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Brisbane" }).format(new Date());
+  return cook.paused_until > today;
 }
 
 serve(async (req: Request) => {
@@ -116,6 +126,7 @@ serve(async (req: Request) => {
     customer_phone,
     delivery_address,
     order_notes,
+    fulfilment: requestedFulfilment,
   } = body;
   const normalizedEmail = customer_email.trim().toLowerCase();
 
@@ -171,11 +182,18 @@ serve(async (req: Request) => {
     // 2b. Enforce the cook's minimum order (meals), if they set one.
     const { data: cookSettings, error: cookSettingsError } = await supabaseAdmin
       .from("cm_cooks")
-      .select("min_order_meals")
+      .select("min_order_meals, orders_paused, paused_until, tier, delivery_method, delivery_fee")
       .eq("id", cook_id)
       .maybeSingle();
 
     if (cookSettingsError) throw cookSettingsError;
+
+    if (isPausedNow(cookSettings)) {
+      return new Response(
+        JSON.stringify({ error: "This cook isn't taking orders right now. Please check back soon." }),
+        { status: 409, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+      );
+    }
 
     const minOrderMeals = cookSettings?.min_order_meals ?? null;
     if (minOrderMeals && totalMeals < minOrderMeals) {
@@ -188,6 +206,15 @@ serve(async (req: Request) => {
     }
 
     const subtotal = lineItems.reduce((sum, li) => sum + li.unitPrice * li.quantity, 0);
+
+    // 2c. Delivery or pickup, and the delivery fee, from the cook's own
+    //     settings (never trust a fee sent by the browser). The platform
+    //     fee is worked out on the food only, not the delivery fee.
+    const deliveryMethod = cookSettings?.tier === "tier_1_in_home" ? "delivery" : cookSettings?.delivery_method ?? "delivery";
+    const fulfilment: "delivery" | "pickup" =
+      deliveryMethod === "pickup" ? "pickup" : deliveryMethod === "both" ? requestedFulfilment ?? "delivery" : "delivery";
+    const deliveryFee = fulfilment === "delivery" ? Number(cookSettings?.delivery_fee ?? 0) : 0;
+
     const applicationFeeAmount = Math.round(subtotal * (PLATFORM_FEE_PERCENT / 100) * 100); // cents
 
     // 3. Guest-first client account — identical pattern to
@@ -229,11 +256,13 @@ serve(async (req: Request) => {
         client_id: clientId,
         status: "pending",
         subtotal_amount: subtotal,
+        delivery_fee_amount: deliveryFee,
+        fulfilment,
         application_fee_amount: applicationFeeAmount / 100,
         customer_name,
         customer_email: normalizedEmail,
         customer_phone: customer_phone ?? null,
-        delivery_address: delivery_address ?? null,
+        delivery_address: fulfilment === "delivery" ? delivery_address ?? null : null,
         order_notes: order_notes ?? null,
       })
       .select("id")
@@ -260,14 +289,30 @@ serve(async (req: Request) => {
       {
         mode: "payment",
         customer_email: normalizedEmail,
-        line_items: lineItems.map((li) => ({
-          price_data: {
-            currency: "aud",
-            product_data: { name: li.name },
-            unit_amount: Math.round(li.unitPrice * 100),
-          },
-          quantity: li.quantity,
-        })),
+        line_items: [
+          ...lineItems.map((li) => ({
+            price_data: {
+              currency: "aud",
+              product_data: { name: li.name },
+              unit_amount: Math.round(li.unitPrice * 100),
+            },
+            quantity: li.quantity,
+          })),
+          ...(deliveryFee > 0
+            ? [
+                {
+                  price_data: {
+                    currency: "aud",
+                    product_data: {
+                      name: cookSettings?.tier === "tier_1_in_home" ? "Travel fee" : "Delivery fee",
+                    },
+                    unit_amount: Math.round(deliveryFee * 100),
+                  },
+                  quantity: 1,
+                },
+              ]
+            : []),
+        ],
         payment_intent_data: {
           application_fee_amount: applicationFeeAmount,
           metadata: { order_id: order.id, cook_id },

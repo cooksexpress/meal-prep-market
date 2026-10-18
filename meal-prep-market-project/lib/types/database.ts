@@ -37,6 +37,16 @@ export type Database = {
           price_range_max: number | null;
           min_order_meals: number | null;
           profile_photo_url: string | null;
+          orders_paused: boolean;
+          paused_until: string | null;
+          opening_hours: OpeningHours | null;
+          delivery_method: "delivery" | "pickup" | "both" | null;
+          delivery_areas: string | null;
+          delivery_days: DayKey[];
+          delivery_fee: number | null;
+          pickup_area: string | null;
+          order_cutoff_day: DayKey | null;
+          order_cutoff_time: string | null;
           public_contact_email: string | null;
           public_contact_phone: string | null;
           declaration_accepted: boolean;
@@ -59,6 +69,16 @@ export type Database = {
           price_range_max?: number | null;
           min_order_meals?: number | null;
           profile_photo_url?: string | null;
+          orders_paused?: boolean;
+          paused_until?: string | null;
+          opening_hours?: OpeningHours | null;
+          delivery_method?: "delivery" | "pickup" | "both" | null;
+          delivery_areas?: string | null;
+          delivery_days?: DayKey[];
+          delivery_fee?: number | null;
+          pickup_area?: string | null;
+          order_cutoff_day?: DayKey | null;
+          order_cutoff_time?: string | null;
           public_contact_email?: string | null;
           public_contact_phone?: string | null;
           declaration_accepted?: boolean;
@@ -155,6 +175,8 @@ export type Database = {
           currency: string;
           subtotal_amount: number;
           application_fee_amount: number | null;
+          fulfilment: "delivery" | "pickup" | null;
+          delivery_fee_amount: number;
           customer_name: string;
           customer_email: string;
           customer_phone: string | null;
@@ -173,6 +195,8 @@ export type Database = {
           currency?: string;
           subtotal_amount: number;
           application_fee_amount?: number | null;
+          fulfilment?: "delivery" | "pickup" | null;
+          delivery_fee_amount?: number;
           customer_name: string;
           customer_email: string;
           customer_phone?: string | null;
@@ -295,6 +319,11 @@ export type Database = {
 }
 
 // Convenience aliases used throughout the components below.
+// Opening days and hours, e.g. { mon: { open: "08:00", close: "16:00" } }.
+// A day that's missing means closed.
+export type DayKey = "mon" | "tue" | "wed" | "thu" | "fri" | "sat" | "sun";
+export type OpeningHours = Partial<Record<DayKey, { open: string; close: string }>>;
+
 export type Cook = Database["public"]["Tables"]["cm_cooks"]["Row"];
 export type CookMedia = Database["public"]["Tables"]["cm_cook_media"]["Row"];
 export type Package = Database["public"]["Tables"]["cm_packages"]["Row"];

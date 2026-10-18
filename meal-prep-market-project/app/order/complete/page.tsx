@@ -26,7 +26,7 @@ export default async function OrderCompletePage({ searchParams }: OrderCompleteP
 
   const { data: order } = await supabase
     .from("cm_orders")
-    .select("id, cook_id, status, subtotal_amount, customer_name, order_notes")
+    .select("id, cook_id, status, subtotal_amount, delivery_fee_amount, customer_name, order_notes")
     .eq("id", order_id)
     .single();
 
@@ -69,7 +69,7 @@ export default async function OrderCompletePage({ searchParams }: OrderCompleteP
         ))}
       </div>
       <p className="mt-3 text-right font-mono text-sm">
-        Total: <span className="text-ocean">${order.subtotal_amount.toFixed(2)}</span>
+        Total: <span className="text-ocean">${(Number(order.subtotal_amount) + Number(order.delivery_fee_amount ?? 0)).toFixed(2)}</span>
       </p>
 
       {cook && (

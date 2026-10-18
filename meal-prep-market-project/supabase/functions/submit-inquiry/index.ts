@@ -51,6 +51,14 @@ function isValidPayload(body: unknown): body is InquiryPayload {
   );
 }
 
+// Paused orders (migration 008). Reopens on the "back" date, Gold Coast time.
+function isPausedNow(cook: { orders_paused?: boolean | null; paused_until?: string | null } | null): boolean {
+  if (!cook?.orders_paused) return false;
+  if (!cook.paused_until) return true;
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Brisbane" }).format(new Date());
+  return cook.paused_until > today;
+}
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: CORS_HEADERS });
@@ -88,7 +96,7 @@ serve(async (req: Request) => {
     //    up against a delisted/nonexistent cook.
     const { data: cook, error: cookError } = await supabaseAdmin
       .from("cm_cooks")
-      .select("id, is_active")
+      .select("id, is_active, orders_paused, paused_until")
       .eq("id", cook_id)
       .single();
 
@@ -97,6 +105,13 @@ serve(async (req: Request) => {
         status: 404,
         headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
       });
+    }
+
+    if (isPausedNow(cook)) {
+      return new Response(
+        JSON.stringify({ error: "This cook isn't taking orders right now. Please check back soon." }),
+        { status: 409, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+      );
     }
 
     // 2. Look up an existing client by email.

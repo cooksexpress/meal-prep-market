@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { StarRating } from "@/components/shared/StarRating";
 import { TierBadge } from "@/components/shared/TierBadge";
+import { isOrdersPaused, priceFromLabel } from "@/lib/cooks/availability";
 import { formatCookDisplayName } from "@/lib/utils/formatCookName";
 import type { Cook } from "@/lib/types/database";
 
@@ -14,10 +15,7 @@ interface CookCardProps {
 }
 
 export function CookCard({ cook, averageRating, reviewCount }: CookCardProps) {
-  const priceLabel =
-    cook.price_range_min && cook.price_range_max
-      ? `$${cook.price_range_min}–$${cook.price_range_max} / week`
-      : "Price on inquiry";
+  const priceLabel = priceFromLabel(cook.price_range_min);
 
   return (
     <Link
@@ -41,6 +39,11 @@ export function CookCard({ cook, averageRating, reviewCount }: CookCardProps) {
         <div className="absolute right-3 top-3">
           <TierBadge tier={cook.tier} />
         </div>
+        {isOrdersPaused(cook) && (
+          <div className="absolute bottom-3 left-3 rounded-full bg-paper/90 px-3 py-1 text-xs text-gold">
+            Orders paused
+          </div>
+        )}
       </div>
 
       <div className="space-y-2 p-4">

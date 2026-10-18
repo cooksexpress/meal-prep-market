@@ -126,14 +126,14 @@ export function FilterBar() {
 
       <div className="flex flex-col gap-1">
         <label htmlFor="maxPrice" className="font-mono text-xs uppercase tracking-wide text-ink/70">
-          Max price
+          Max price per meal
         </label>
         <input
           id="maxPrice"
           type="number"
           min={0}
-          step={10}
-          placeholder="$"
+          step={1}
+          placeholder="e.g. $15"
           defaultValue={searchParams.get("maxPrice") ?? ""}
           onChange={(e) => setParam("maxPrice", e.target.value)}
           className="w-28 border border-hairline bg-paper px-3 py-2 text-sm"

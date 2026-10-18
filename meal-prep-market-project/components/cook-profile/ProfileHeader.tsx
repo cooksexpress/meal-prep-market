@@ -5,6 +5,7 @@ import { StarRating } from "@/components/shared/StarRating";
 import { TierBadge } from "@/components/shared/TierBadge";
 import { formatCookDisplayName } from "@/lib/utils/formatCookName";
 import type { Cook } from "@/lib/types/database";
+import { priceFromLabel } from "@/lib/cooks/availability";
 
 interface ProfileHeaderProps {
   cook: Cook;
@@ -13,10 +14,7 @@ interface ProfileHeaderProps {
 }
 
 export function ProfileHeader({ cook, averageRating, reviewCount }: ProfileHeaderProps) {
-  const priceLabel =
-    cook.price_range_min && cook.price_range_max
-      ? `$${cook.price_range_min}–$${cook.price_range_max} / week`
-      : "Price on inquiry";
+  const priceLabel = priceFromLabel(cook.price_range_min);
 
   return (
     <header className="flex flex-col gap-6 border-b border-hairline pb-8 sm:flex-row sm:items-start">

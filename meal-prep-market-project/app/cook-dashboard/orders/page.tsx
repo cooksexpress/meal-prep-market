@@ -17,7 +17,7 @@ export default async function CookDashboardOrdersPage() {
 
   const { data: orders } = await supabase
     .from("cm_orders")
-    .select("id, customer_name, customer_phone, delivery_address, order_notes, subtotal_amount, created_at, status")
+    .select("id, customer_name, customer_phone, delivery_address, order_notes, subtotal_amount, delivery_fee_amount, fulfilment, created_at, status")
     .eq("cook_id", user.id)
     .order("created_at", { ascending: false })
     .limit(20);
@@ -54,7 +54,8 @@ export default async function CookDashboardOrdersPage() {
                       : "text-paprika"
                   }`}
                 >
-                  {order.status} — ${order.subtotal_amount.toFixed(2)}
+                  {order.status} — ${(Number(order.subtotal_amount) + Number(order.delivery_fee_amount ?? 0)).toFixed(2)}
+                  {order.fulfilment === "pickup" ? " · Pickup" : order.fulfilment === "delivery" ? " · Delivery" : ""}
                 </span>
               </div>
               <div className="mt-1 flex flex-wrap gap-4 font-mono text-xs text-ink/60">
