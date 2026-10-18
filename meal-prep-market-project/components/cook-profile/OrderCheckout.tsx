@@ -4,6 +4,9 @@
 // either send a quick inquiry, or build a cart and pay directly here.
 // Only shown when the cook has at least one available menu item AND
 // a connected Stripe account capable of accepting charges.
+// Items are single dishes (1 meal each) or packs (a set number of
+// meals). If the cook has a minimum order, checkout stays locked until
+// the client has picked enough meals. The server checks this again.
 
 "use client";
 
@@ -15,6 +18,7 @@ interface OrderCheckoutProps {
   cookId: string;
   businessName: string;
   items: Package[];
+  minOrderMeals: number | null;
 }
 
 interface CartLine {
@@ -22,7 +26,11 @@ interface CartLine {
   quantity: number;
 }
 
-export function OrderCheckout({ cookId, businessName, items }: OrderCheckoutProps) {
+function mealsPerUnit(item: Package): number {
+  return item.item_type === "pack" ? Math.max(item.meal_count ?? 1, 1) : 1;
+}
+
+export function OrderCheckout({ cookId, businessName, items, minOrderMeals }: OrderCheckoutProps) {
   const [cart, setCart] = useState<Record<string, number>>({});
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
@@ -52,10 +60,20 @@ export function OrderCheckout({ cookId, businessName, items }: OrderCheckoutProp
     return sum + (item?.indicative_price ?? 0) * line.quantity;
   }, 0);
 
+  const totalMeals = cartLines.reduce((sum, line) => {
+    const item = itemById.get(line.package_id);
+    return sum + (item ? mealsPerUnit(item) * line.quantity : 0);
+  }, 0);
+  const mealsShort = minOrderMeals ? Math.max(minOrderMeals - totalMeals, 0) : 0;
+
   async function handleCheckout(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (cartLines.length === 0) {
       setErrorMessage("Add at least one item to your order.");
+      return;
+    }
+    if (mealsShort > 0) {
+      setErrorMessage(`This cook's minimum order is ${minOrderMeals} meals. Add ${mealsShort} more.`);
       return;
     }
 
@@ -92,47 +110,73 @@ export function OrderCheckout({ cookId, businessName, items }: OrderCheckoutProp
 
   if (items.length === 0) return null;
 
+  const dishes = items.filter((i) => i.item_type !== "pack");
+  const packs = items.filter((i) => i.item_type === "pack");
+
+  function renderGroup(title: string, groupItems: Package[]) {
+    if (groupItems.length === 0) return null;
+    return (
+      <div className="mt-5">
+        <p className="font-mono text-xs uppercase tracking-wide text-ink/60">{title}</p>
+        <ul className="mt-2 divide-y divide-hairline border-y border-hairline">
+          {groupItems.map((item) => (
+            <li key={item.id} className="flex items-center justify-between gap-4 py-3">
+              <div className="min-w-0">
+                <p className="font-medium">{item.name}</p>
+                {item.description && <p className="text-sm text-ink/70">{item.description}</p>}
+                <p className="font-mono text-xs text-gold">
+                  {item.indicative_price != null && `$${item.indicative_price.toFixed(2)}`}
+                  {item.item_type === "pack" && item.meal_count ? ` · ${item.meal_count} meals` : ""}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => updateQuantity(item.id, -1)}
+                  className="h-8 w-8 rounded-full border border-hairline font-mono"
+                  aria-label={`Remove one ${item.name}`}
+                >
+                  −
+                </button>
+                <span className="w-5 text-center font-mono text-sm">{cart[item.id] ?? 0}</span>
+                <button
+                  type="button"
+                  onClick={() => updateQuantity(item.id, 1)}
+                  className="h-8 w-8 rounded-full border border-gold font-mono text-gold"
+                  aria-label={`Add one ${item.name}`}
+                >
+                  +
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
   return (
-    <div className="border border-hairline p-6">
+    <div className="rounded-2xl border border-hairline bg-surface p-6">
       <h2 className="font-display text-2xl">Order from {businessName}</h2>
 
-      <ul className="mt-4 divide-y divide-hairline">
-        {items.map((item) => (
-          <li key={item.id} className="flex items-center justify-between gap-4 py-3">
-            <div>
-              <p className="font-medium">{item.name}</p>
-              {item.indicative_price != null && (
-                <p className="font-mono text-xs text-ocean">${item.indicative_price.toFixed(2)}</p>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => updateQuantity(item.id, -1)}
-                className="h-7 w-7 border border-hairline font-mono"
-                aria-label={`Remove one ${item.name}`}
-              >
-                −
-              </button>
-              <span className="w-4 text-center font-mono text-sm">{cart[item.id] ?? 0}</span>
-              <button
-                type="button"
-                onClick={() => updateQuantity(item.id, 1)}
-                className="h-7 w-7 border border-hairline font-mono"
-                aria-label={`Add one ${item.name}`}
-              >
-                +
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
+      {minOrderMeals && (
+        <p className="mt-1 text-sm text-ink/60">Minimum order: {minOrderMeals} meals</p>
+      )}
+
+      {renderGroup("Single dishes", dishes)}
+      {renderGroup("Packs", packs)}
 
       {cartLines.length > 0 && (
         <form onSubmit={handleCheckout} className="mt-6 space-y-4 border-t border-hairline pt-6">
           <p className="font-mono text-sm">
-            Subtotal: <span className="text-ocean">${subtotal.toFixed(2)}</span>
+            {totalMeals} {totalMeals === 1 ? "meal" : "meals"} · Subtotal:{" "}
+            <span className="text-ocean">${subtotal.toFixed(2)}</span>
           </p>
+          {mealsShort > 0 && (
+            <p className="text-sm text-paprika">
+              Add {mealsShort} more {mealsShort === 1 ? "meal" : "meals"} to reach the minimum order.
+            </p>
+          )}
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <input
@@ -193,7 +237,7 @@ export function OrderCheckout({ cookId, businessName, items }: OrderCheckoutProp
 
           <button
             type="submit"
-            disabled={status === "submitting"}
+            disabled={status === "submitting" || mealsShort > 0}
             className="w-full rounded-full bg-gold px-6 py-3 font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {status === "submitting" ? "Redirecting to payment…" : `Checkout — $${subtotal.toFixed(2)}`}

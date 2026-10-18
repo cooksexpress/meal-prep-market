@@ -1,35 +1,74 @@
 // components/cook-profile/PackageList.tsx
+//
+// Read-only menu, shown on a cook's profile when they can't take
+// online orders yet (clients send an inquiry instead). Cooks who can
+// take payment show the same menu inside OrderCheckout, with +/-.
 
 import type { Package } from "@/lib/types/database";
 
-export function PackageList({ packages }: { packages: Package[] }) {
-  if (packages.length === 0) return null;
+interface PackageListProps {
+  packages: Package[];
+  minOrderMeals: number | null;
+}
 
+function MenuGroup({ title, items }: { title: string; items: Package[] }) {
+  if (items.length === 0) return null;
   return (
-    <section aria-labelledby="packages-heading" className="py-8">
-      <h2 id="packages-heading" className="font-display text-2xl">
-        Sample packages
-      </h2>
-      <div className="mt-4 divide-y divide-hairline border-y border-hairline">
-        {packages.map((pkg) => (
-          <div key={pkg.id} className="flex items-baseline justify-between gap-4 py-4">
+    <div className="mt-6">
+      <p className="font-mono text-xs uppercase tracking-wide text-ink/60">{title}</p>
+      <div className="mt-2 divide-y divide-hairline border-y border-hairline">
+        {items.map((item) => (
+          <div key={item.id} className="flex items-baseline justify-between gap-4 py-4">
             <div>
-              <p className="font-medium">{pkg.name}</p>
-              {pkg.description && <p className="mt-1 text-sm text-ink/70">{pkg.description}</p>}
-              {pkg.meal_count && (
-                <p className="mt-1 font-mono text-xs text-ink/50">{pkg.meal_count} meals</p>
-              )}
+              <p className="font-medium">{item.name}</p>
+              {item.description && <p className="mt-1 text-sm text-ink/70">{item.description}</p>}
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {item.item_type === "pack" && item.meal_count && (
+                  <span className="rounded-full border border-gold/60 px-2 py-0.5 font-mono text-[11px] text-gold">
+                    {item.meal_count} meals
+                  </span>
+                )}
+                {item.dietary_tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-hairline px-2 py-0.5 font-mono text-[11px] text-ink/70"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
             </div>
-            {pkg.indicative_price && (
-              <p className="whitespace-nowrap font-mono text-sm text-ocean">
-                ~${pkg.indicative_price}
+            {item.indicative_price != null && (
+              <p className="whitespace-nowrap font-mono text-sm text-gold">
+                ${item.indicative_price.toFixed(2)}
               </p>
             )}
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+export function PackageList({ packages, minOrderMeals }: PackageListProps) {
+  const available = packages.filter((p) => p.is_available);
+  if (available.length === 0) return null;
+
+  const dishes = available.filter((p) => p.item_type !== "pack");
+  const packs = available.filter((p) => p.item_type === "pack");
+
+  return (
+    <section aria-labelledby="menu-heading" className="py-8">
+      <h2 id="menu-heading" className="font-display text-2xl">
+        Menu
+      </h2>
+      {minOrderMeals && (
+        <p className="mt-1 text-sm text-ink/60">Minimum order: {minOrderMeals} meals</p>
+      )}
+      <MenuGroup title="Single dishes" items={dishes} />
+      <MenuGroup title="Packs" items={packs} />
       <p className="mt-3 font-mono text-xs text-ink/50">
-        Indicative pricing only — confirm final cost directly with the cook.
+        Send an inquiry below to order or ask the cook a question.
       </p>
     </section>
   );

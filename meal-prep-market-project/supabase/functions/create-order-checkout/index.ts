@@ -140,7 +140,7 @@ serve(async (req: Request) => {
     const packageIds = items.map((i) => i.package_id);
     const { data: packages, error: packagesError } = await supabaseAdmin
       .from("cm_packages")
-      .select("id, name, indicative_price, is_available")
+      .select("id, name, indicative_price, is_available, item_type, meal_count")
       .eq("cook_id", cook_id)
       .in("id", packageIds);
 
@@ -148,6 +148,7 @@ serve(async (req: Request) => {
 
     const packageById = new Map((packages ?? []).map((p) => [p.id, p]));
     const lineItems: { package_id: string; name: string; unitPrice: number; quantity: number }[] = [];
+    let totalMeals = 0;
 
     for (const cartItem of items) {
       const pkg = packageById.get(cartItem.package_id);
@@ -157,12 +158,33 @@ serve(async (req: Request) => {
           { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
         );
       }
+      const mealsPerUnit = pkg.item_type === "pack" ? Math.max(pkg.meal_count ?? 1, 1) : 1;
+      totalMeals += mealsPerUnit * cartItem.quantity;
       lineItems.push({
         package_id: pkg.id,
         name: pkg.name,
         unitPrice: pkg.indicative_price,
         quantity: cartItem.quantity,
       });
+    }
+
+    // 2b. Enforce the cook's minimum order (meals), if they set one.
+    const { data: cookSettings, error: cookSettingsError } = await supabaseAdmin
+      .from("cm_cooks")
+      .select("min_order_meals")
+      .eq("id", cook_id)
+      .maybeSingle();
+
+    if (cookSettingsError) throw cookSettingsError;
+
+    const minOrderMeals = cookSettings?.min_order_meals ?? null;
+    if (minOrderMeals && totalMeals < minOrderMeals) {
+      return new Response(
+        JSON.stringify({
+          error: `This cook's minimum order is ${minOrderMeals} meals. Please add ${minOrderMeals - totalMeals} more.`,
+        }),
+        { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } }
+      );
     }
 
     const subtotal = lineItems.reduce((sum, li) => sum + li.unitPrice * li.quantity, 0);

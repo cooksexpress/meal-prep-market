@@ -35,6 +35,7 @@ export type Database = {
           dietary_specialty_tags: string[];
           price_range_min: number | null;
           price_range_max: number | null;
+          min_order_meals: number | null;
           profile_photo_url: string | null;
           public_contact_email: string | null;
           public_contact_phone: string | null;
@@ -56,6 +57,7 @@ export type Database = {
           dietary_specialty_tags?: string[];
           price_range_min?: number | null;
           price_range_max?: number | null;
+          min_order_meals?: number | null;
           profile_photo_url?: string | null;
           public_contact_email?: string | null;
           public_contact_phone?: string | null;
@@ -96,6 +98,7 @@ export type Database = {
           description: string | null;
           meal_count: number | null;
           indicative_price: number | null;
+          item_type: "dish" | "pack";
           dietary_tags: string[];
           is_available: boolean;
           sort_order: number;
@@ -108,6 +111,7 @@ export type Database = {
           description?: string | null;
           meal_count?: number | null;
           indicative_price?: number | null;
+          item_type?: "dish" | "pack";
           dietary_tags?: string[];
           is_available?: boolean;
           sort_order?: number;

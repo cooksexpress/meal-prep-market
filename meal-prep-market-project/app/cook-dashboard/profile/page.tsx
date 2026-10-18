@@ -1,7 +1,7 @@
 // app/cook-dashboard/profile/page.tsx
 //
-// Reuses the exact same ProfileForm, MediaUploader, and PackageManager
-// components built for onboarding — post-signup editing is the same
+// Reuses the exact same ProfileForm and MediaUploader
+// components built for onboarding (the menu lives on its own Menu page) — post-signup editing is the same
 // operation as initial setup, just pre-filled and without the wizard
 // framing.
 
@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { BusinessNameEditor } from "@/components/cook-dashboard/BusinessNameEditor";
 import { ProfileForm } from "@/components/onboarding/ProfileForm";
 import { MediaUploader } from "@/components/onboarding/MediaUploader";
-import { PackageManager } from "@/components/onboarding/PackageManager";
+import Link from "next/link";
 
 export default async function CookDashboardProfilePage() {
   const supabase = await createClient();
@@ -31,10 +31,11 @@ export default async function CookDashboardProfilePage() {
 
   if (!cook) redirect("/onboarding/tier");
 
-  const [{ data: media }, { data: packages }] = await Promise.all([
-    supabase.from("cm_cook_media").select("*").eq("cook_id", user.id).order("sort_order"),
-    supabase.from("cm_packages").select("*").eq("cook_id", user.id).order("sort_order"),
-  ]);
+  const { data: media } = await supabase
+    .from("cm_cook_media")
+    .select("*")
+    .eq("cook_id", user.id)
+    .order("sort_order");
 
   return (
     <div className="space-y-10">
@@ -52,17 +53,26 @@ export default async function CookDashboardProfilePage() {
       />
 
       <section>
-        <h2 className="font-display text-xl">Photo gallery</h2>
+        <h2 className="font-display text-xl">Your photos</h2>
+        <p className="mt-1 text-sm text-ink/60">
+          Add 3–6 photos of your best dishes. They show at the top of your profile.
+        </p>
         <div className="mt-3">
           <MediaUploader cookId={user.id} initialMedia={media ?? []} />
         </div>
       </section>
 
       <section>
-        <h2 className="font-display text-xl">Sample packages</h2>
-        <div className="mt-3">
-          <PackageManager cookId={user.id} initialPackages={packages ?? []} />
-        </div>
+        <h2 className="font-display text-xl">Your menu</h2>
+        <p className="mt-1 text-sm text-ink/60">
+          Your dishes, packs, and minimum order are managed on the Menu page.
+        </p>
+        <Link
+          href="/cook-dashboard/menu"
+          className="mt-3 inline-block rounded-full border border-gold px-5 py-2 text-sm text-gold transition-colors hover:bg-gold hover:text-paper"
+        >
+          Edit your menu
+        </Link>
       </section>
 
       <section className="border-t border-hairline pt-10">

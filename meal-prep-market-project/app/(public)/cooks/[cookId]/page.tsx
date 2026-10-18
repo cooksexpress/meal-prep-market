@@ -103,18 +103,25 @@ export default async function CookProfilePage({ params }: CookProfilePageProps) 
 
   const { cook, media, packages, reviews, canAcceptPayment, averageRating, reviewCount } = data;
   const availableItems = packages.filter((p) => p.is_available);
+  const canOrderOnline = canAcceptPayment && availableItems.length > 0;
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
       <ProfileHeader cook={cook} averageRating={averageRating} reviewCount={reviewCount} />
       <PhotoGallery media={media} />
-      <PackageList packages={packages} />
-      <ReviewList reviews={reviews} />
-      {canAcceptPayment && availableItems.length > 0 && (
-        <div className="pt-4">
-          <OrderCheckout cookId={cook.id} businessName={cook.business_name} items={availableItems} />
+      {canOrderOnline ? (
+        <div className="py-8">
+          <OrderCheckout
+            cookId={cook.id}
+            businessName={cook.business_name}
+            items={availableItems}
+            minOrderMeals={cook.min_order_meals}
+          />
         </div>
+      ) : (
+        <PackageList packages={packages} minOrderMeals={cook.min_order_meals} />
       )}
+      <ReviewList reviews={reviews} />
       <div className="pt-4">
         <InquiryForm cookId={cook.id} />
       </div>
