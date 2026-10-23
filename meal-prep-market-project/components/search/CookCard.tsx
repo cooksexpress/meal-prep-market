@@ -48,7 +48,13 @@ export function CookCard({ cook, averageRating, reviewCount }: CookCardProps) {
 
       <div className="space-y-2 p-4">
         <h3 className="font-display text-xl leading-tight">{formatCookDisplayName(cook)}</h3>
-        <StarRating rating={averageRating} reviewCount={reviewCount} size="sm" />
+        {reviewCount > 0 ? (
+          <StarRating rating={averageRating} reviewCount={reviewCount} size="sm" />
+        ) : (
+          <span className="inline-block rounded-full border border-gold/60 px-2.5 py-0.5 text-xs text-gold">
+            New to Meal Prep Market
+          </span>
+        )}
         <div className="flex flex-wrap gap-1.5">
           {cook.cuisine_tags.slice(0, 3).map((tag) => (
             <span

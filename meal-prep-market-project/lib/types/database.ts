@@ -234,7 +234,8 @@ export type Database = {
         Row: {
           id: string;
           cook_id: string;
-          client_id: string;
+          client_id: string | null;
+          reviewer_name: string | null;
           inquiry_id: string | null;
           rating: number;
           review_text: string | null;
@@ -245,7 +246,8 @@ export type Database = {
         Insert: {
           id?: string;
           cook_id: string;
-          client_id: string;
+          client_id?: string | null;
+          reviewer_name?: string | null;
           inquiry_id?: string | null;
           rating: number;
           review_text?: string | null;

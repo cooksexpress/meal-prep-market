@@ -40,7 +40,13 @@ export function ProfileHeader({ cook, averageRating, reviewCount }: ProfileHeade
           <TierBadge tier={cook.tier} />
         </div>
 
-        <StarRating rating={averageRating} reviewCount={reviewCount} />
+        {reviewCount > 0 ? (
+          <StarRating rating={averageRating} reviewCount={reviewCount} />
+        ) : (
+          <span className="inline-block rounded-full border border-gold/60 px-3 py-1 text-sm text-gold">
+            New to Meal Prep Market
+          </span>
+        )}
 
         {cook.bio && <p className="max-w-2xl text-ink/80">{cook.bio}</p>}
 

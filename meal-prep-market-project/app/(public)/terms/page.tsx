@@ -57,10 +57,12 @@ export default function TermsPage() {
         <section>
           <h2 className="font-display text-xl">4. Reviews</h2>
           <p className="mt-2">
-            Reviews are user-generated content, not verified or endorsed by Cook&rsquo;s
-            Marketplace. Only clients who have submitted a genuine inquiry to a cook may review
-            them. Prohibited content includes unlawful, defamatory, or knowingly false
-            statements, harassment, and content unrelated to the cook&rsquo;s service.
+            Reviews are user-generated content, not verified or endorsed by Meal Prep Market.
+            Reviews must be genuine and based on a real experience of the cook&rsquo;s food or
+            service. Cooks must not review themselves or their own business, or post, buy or
+            arrange fake reviews for themselves or others. Prohibited content also includes
+            unlawful, defamatory, or knowingly false statements, harassment, and content
+            unrelated to the cook&rsquo;s service.
           </p>
           <p className="mt-2">
             Anyone may request removal of a review by identifying the specific review and the
