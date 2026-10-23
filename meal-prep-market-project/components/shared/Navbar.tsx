@@ -1,12 +1,14 @@
 // components/shared/Navbar.tsx
 //
 // Signed out: one "I'm a cook" button (customers never need to sign in).
-// Signed in: a button straight to their dashboard (cooks) or inbox.
+// Signed in: a button straight to their dashboard (cooks) or inbox,
+// plus a small "Sign out" link.
 
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCookHome } from "@/lib/auth/cookHome";
 import { BackButton } from "./BackButton";
+import { SignOutButton } from "@/components/auth/SignOutButton";
 
 export async function Navbar() {
   let home: string | null = null;
@@ -41,12 +43,15 @@ export async function Navbar() {
           </Link>
         </div>
         {home ? (
-          <Link
-            href={home}
-            className="whitespace-nowrap rounded-full bg-gold px-3 py-2 text-xs font-medium text-paper transition-opacity hover:opacity-90 sm:px-4"
-          >
-            {isCook ? "My dashboard" : "My inbox"}
-          </Link>
+          <div className="flex items-center gap-3">
+            <SignOutButton className="whitespace-nowrap text-xs text-ink/60 underline hover:text-ink" />
+            <Link
+              href={home}
+              className="whitespace-nowrap rounded-full bg-gold px-3 py-2 text-xs font-medium text-paper transition-opacity hover:opacity-90 sm:px-4"
+            >
+              {isCook ? "My dashboard" : "My inbox"}
+            </Link>
+          </div>
         ) : (
           <Link
             href="/onboarding"

@@ -8,6 +8,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ThreadList } from "@/components/inbox/ThreadList";
+import { SignOutButton } from "@/components/auth/SignOutButton";
+import { BackButton } from "@/components/shared/BackButton";
 
 export default async function InboxPage() {
   const supabase = await createClient();
@@ -49,6 +51,10 @@ export default async function InboxPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-10">
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <BackButton />
+        <SignOutButton className="text-sm text-ink/60 underline hover:text-ink" />
+      </div>
       <h1 className="font-display text-4xl">Your inquiries</h1>
       <p className="mt-2 text-ink/70">
         Conversations happen off-platform — this is just your record of who you&rsquo;ve contacted.
