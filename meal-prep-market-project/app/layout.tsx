@@ -25,6 +25,12 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://mealprepmarket.com.au"),
+  // Google Search Console ownership check. Keep this, or Google stops
+  // treating the site as verified.
+  verification: {
+    google: "lldnO2QdwcfquWrYUHyqklz4fP5T79WkRT6Ty01xzZQ",
+  },
   title: {
     default: "Meal Prep Market — Find a local cook, Gold Coast",
     template: "%s | Meal Prep Market",
