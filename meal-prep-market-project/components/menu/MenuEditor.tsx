@@ -8,6 +8,8 @@
 // Everything is stored in cm_packages (item_type = 'dish' | 'pack').
 // Each item can have its own optional photo (image_url), uploaded via
 // lib/images/uploadImage (converts HEIC phone photos, shrinks big ones).
+// Each item can be edited in place (Edit), switched between Available
+// and Sold out (dashboard only), or removed (asks "are you sure" first).
 
 "use client";
 
@@ -62,6 +64,16 @@ export function MenuEditor({
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoBusyId, setPhotoBusyId] = useState<string | null>(null);
   const [rowError, setRowError] = useState<string | null>(null);
+
+  // Editing an existing item (one at a time).
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editPrice, setEditPrice] = useState("");
+  const [editMealCount, setEditMealCount] = useState("");
+  const [editTags, setEditTags] = useState("");
+  const [editStatus, setEditStatus] = useState<"idle" | "saving" | "error">("idle");
+  const [confirmRemoveId, setConfirmRemoveId] = useState<string | null>(null);
 
   const [minOrder, setMinOrder] = useState(initialMinOrderMeals?.toString() ?? "");
   const [minOrderStatus, setMinOrderStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -188,15 +200,57 @@ export function MenuEditor({
     await removeCookImage(supabase, oldUrl);
   }
 
+  function startEdit(item: Package) {
+    setEditingId(item.id);
+    setEditName(item.name);
+    setEditDescription(item.description ?? "");
+    setEditPrice(item.indicative_price != null ? String(item.indicative_price) : "");
+    setEditMealCount(item.meal_count != null ? String(item.meal_count) : "");
+    setEditTags(item.dietary_tags.join(", "));
+    setEditStatus("idle");
+    setConfirmRemoveId(null);
+  }
+
+  function editProblem(item: Package): string | null {
+    const p = Number(editPrice);
+    const m = Number(editMealCount);
+    if (!editName.trim()) return "Type a name.";
+    if (editPrice === "" || !(p > 0)) return "Type a price.";
+    if (item.item_type === "pack" && !(Number.isInteger(m) && m >= 2))
+      return "Type how many meals are in the pack (2 or more).";
+    return null;
+  }
+
+  async function handleSaveEdit(item: Package) {
+    if (editProblem(item)) return;
+    setEditStatus("saving");
+    const changes = {
+      name: editName.trim(),
+      description: editDescription.trim() || null,
+      indicative_price: Number(editPrice),
+      meal_count: item.item_type === "pack" ? Number(editMealCount) : 1,
+      dietary_tags: parseTags(editTags),
+    };
+    const { error } = await supabase.from("cm_packages").update(changes).eq("id", item.id);
+    if (error) {
+      setEditStatus("error");
+      return;
+    }
+    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, ...changes } : i)));
+    setEditingId(null);
+    setEditStatus("idle");
+  }
+
   async function handleRemove(itemId: string) {
+    setConfirmRemoveId(null);
     const item = items.find((i) => i.id === itemId);
     await supabase.from("cm_packages").delete().eq("id", itemId);
     setItems((prev) => prev.filter((i) => i.id !== itemId));
     await removeCookImage(supabase, item?.image_url ?? null);
   }
 
-  async function handleToggleAvailability(item: Package) {
-    const nextValue = !item.is_available;
+  async function handleSetAvailability(item: Package, nextValue: boolean) {
+    if (item.is_available === nextValue) return;
     setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, is_available: nextValue } : i)));
 
     const { error } = await supabase
@@ -225,84 +279,226 @@ export function MenuEditor({
     setMinOrderStatus(error ? "error" : "saved");
   }
 
+  function renderEditForm(item: Package) {
+    const itemIsPack = item.item_type === "pack";
+    const problem = editProblem(item);
+    return (
+      <li key={item.id} className="space-y-3 py-4">
+        <p className={labelClass}>Editing {itemIsPack ? "pack" : "dish"}</p>
+        <div className="flex flex-col gap-1">
+          <label htmlFor={`edit-name-${item.id}`} className={labelClass}>
+            {itemIsPack ? "Pack name" : "Dish name"}
+          </label>
+          <input
+            id={`edit-name-${item.id}`}
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            className={fieldClass}
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor={`edit-desc-${item.id}`} className={labelClass}>
+            What&rsquo;s included (optional)
+          </label>
+          <textarea
+            id={`edit-desc-${item.id}`}
+            value={editDescription}
+            onChange={(e) => setEditDescription(e.target.value)}
+            rows={3}
+            className={fieldClass}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1">
+            <label htmlFor={`edit-price-${item.id}`} className={labelClass}>
+              {itemIsPack ? "Pack price ($)" : "Price per meal ($)"}
+            </label>
+            <input
+              id={`edit-price-${item.id}`}
+              type="number"
+              inputMode="decimal"
+              step="0.01"
+              min="0"
+              value={editPrice}
+              onChange={(e) => setEditPrice(e.target.value)}
+              className={fieldClass}
+            />
+          </div>
+          {itemIsPack && (
+            <div className="flex flex-col gap-1">
+              <label htmlFor={`edit-meals-${item.id}`} className={labelClass}>
+                Meals in pack
+              </label>
+              <input
+                id={`edit-meals-${item.id}`}
+                type="number"
+                inputMode="numeric"
+                step="1"
+                min="2"
+                value={editMealCount}
+                onChange={(e) => setEditMealCount(e.target.value)}
+                className={fieldClass}
+              />
+            </div>
+          )}
+        </div>
+        <div className="flex flex-col gap-1">
+          <label htmlFor={`edit-tags-${item.id}`} className={labelClass}>
+            Dietary (optional)
+          </label>
+          <input
+            id={`edit-tags-${item.id}`}
+            placeholder="e.g. Gluten-free, High-protein"
+            value={editTags}
+            onChange={(e) => setEditTags(e.target.value)}
+            className={fieldClass}
+          />
+        </div>
+        <p className="text-sm text-ink/50">To change the photo, tap the photo in your menu list.</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => handleSaveEdit(item)}
+            disabled={editStatus === "saving" || problem !== null}
+            className="rounded-full bg-gold px-5 py-2 text-sm font-medium text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            {editStatus === "saving" ? "Saving…" : "Save changes"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditingId(null)}
+            className="rounded-full border border-hairline px-5 py-2 text-sm text-ink/70 hover:border-ink"
+          >
+            Cancel
+          </button>
+        </div>
+        {problem && <p className="text-sm text-ink/50">{problem}</p>}
+        {editStatus === "error" && (
+          <p role="alert" className="font-mono text-sm text-paprika">
+            Couldn&rsquo;t save that. Please try again.
+          </p>
+        )}
+      </li>
+    );
+  }
+
   function renderItem(item: Package) {
+    if (editingId === item.id) return renderEditForm(item);
     const itemIsPack = item.item_type === "pack";
     return (
-      <li key={item.id} className="flex flex-wrap items-start justify-between gap-4 py-4">
-        <label
-          className="relative flex h-16 w-16 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed border-hairline text-center font-mono text-[10px] leading-tight text-ink/60 hover:border-gold hover:text-gold"
-          aria-label={item.image_url ? `Change photo for ${item.name}` : `Add photo for ${item.name}`}
-        >
-          {item.image_url ? (
-            <Image src={item.image_url} alt="" fill className="object-cover" sizes="64px" />
-          ) : (
-            <span>{photoBusyId === item.id ? "Uploading…" : "+ Photo"}</span>
-          )}
-          {item.image_url && photoBusyId === item.id && (
-            <span className="absolute inset-0 flex items-center justify-center bg-paper/70">…</span>
-          )}
-          <input
-            type="file"
-            accept="image/*,.heic,.heif"
-            className="hidden"
-            disabled={photoBusyId !== null}
-            onChange={(e) => handleChangeItemPhoto(item, e)}
-          />
-        </label>
-        <div className="min-w-0 flex-1">
-          <p className="font-medium">{item.name}</p>
-          {item.description && <p className="mt-0.5 text-sm text-ink/70">{item.description}</p>}
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {itemIsPack && item.meal_count && (
-              <span className="rounded-full border border-gold/60 px-2 py-0.5 font-mono text-[11px] text-gold">
-                {item.meal_count} meals
-              </span>
+      <li key={item.id} className="space-y-3 py-4">
+        <div className="flex items-start gap-4">
+          <label
+            className="relative flex h-16 w-16 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-dashed border-hairline text-center font-mono text-[10px] leading-tight text-ink/60 hover:border-gold hover:text-gold"
+            aria-label={item.image_url ? `Change photo for ${item.name}` : `Add photo for ${item.name}`}
+          >
+            {item.image_url ? (
+              <Image src={item.image_url} alt="" fill className="object-cover" sizes="64px" />
+            ) : (
+              <span>{photoBusyId === item.id ? "Uploading…" : "+ Photo"}</span>
             )}
-            {item.dietary_tags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full border border-hairline px-2 py-0.5 font-mono text-[11px] text-ink/70"
-              >
-                {tag}
-              </span>
-            ))}
+            {item.image_url && photoBusyId === item.id && (
+              <span className="absolute inset-0 flex items-center justify-center bg-paper/70">…</span>
+            )}
+            <input
+              type="file"
+              accept="image/*,.heic,.heif"
+              className="hidden"
+              disabled={photoBusyId !== null}
+              onChange={(e) => handleChangeItemPhoto(item, e)}
+            />
+          </label>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-3">
+              <p className="font-medium">{item.name}</p>
+              <span className="shrink-0 font-mono text-sm text-gold">{formatPrice(item.indicative_price)}</span>
+            </div>
+            {item.description && <p className="mt-0.5 text-sm text-ink/70">{item.description}</p>}
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {itemIsPack && item.meal_count && (
+                <span className="rounded-full border border-gold/60 px-2 py-0.5 font-mono text-[11px] text-gold">
+                  {item.meal_count} meals
+                </span>
+              )}
+              {item.dietary_tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full border border-hairline px-2 py-0.5 font-mono text-[11px] text-ink/70"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <span className="font-mono text-sm text-gold">{formatPrice(item.indicative_price)}</span>
-
+        <div className="flex flex-wrap items-center gap-3">
           {showAvailability && (
-            <>
+            <div
+              role="radiogroup"
+              aria-label={`Is ${item.name} available this week?`}
+              className="inline-flex overflow-hidden rounded-full border border-hairline text-xs"
+            >
               <button
                 type="button"
-                onClick={() => handleToggleAvailability(item)}
-                role="switch"
+                role="radio"
                 aria-checked={item.is_available}
-                aria-label={`${item.name} available`}
-                className={`relative h-6 w-11 rounded-full transition-colors ${
-                  item.is_available ? "bg-gold" : "bg-hairline"
+                onClick={() => handleSetAvailability(item, true)}
+                className={`px-3 py-1.5 transition-colors ${
+                  item.is_available ? "bg-gold font-medium text-paper" : "text-ink/60 hover:text-ink"
                 }`}
               >
-                <span
-                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-paper transition-transform ${
-                    item.is_available ? "translate-x-5" : "translate-x-0.5"
-                  }`}
-                />
+                {item.is_available ? "✓ Available" : "Available"}
               </button>
-              <span className={`font-mono text-xs ${item.is_available ? "text-gold" : "text-paprika"}`}>
-                {item.is_available ? "Available" : "Sold out"}
-              </span>
-            </>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={!item.is_available}
+                onClick={() => handleSetAvailability(item, false)}
+                className={`px-3 py-1.5 transition-colors ${
+                  !item.is_available ? "bg-paprika font-medium text-paper" : "text-ink/60 hover:text-ink"
+                }`}
+              >
+                {!item.is_available ? "✓ Sold out" : "Sold out"}
+              </button>
+            </div>
           )}
 
           <button
             type="button"
-            onClick={() => handleRemove(item.id)}
-            className="font-mono text-xs text-paprika underline"
+            onClick={() => startEdit(item)}
+            className="rounded-full border border-gold px-3 py-1.5 text-xs text-gold transition-colors hover:bg-gold hover:text-paper"
           >
-            Remove
+            Edit
           </button>
+
+          {confirmRemoveId === item.id ? (
+            <span className="flex items-center gap-2 text-xs">
+              <span className="text-ink/70">Remove this?</span>
+              <button
+                type="button"
+                onClick={() => handleRemove(item.id)}
+                className="font-mono text-paprika underline"
+              >
+                Yes, remove
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmRemoveId(null)}
+                className="font-mono text-ink/60 underline"
+              >
+                Keep
+              </button>
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirmRemoveId(item.id)}
+              className="font-mono text-xs text-paprika underline"
+            >
+              Remove
+            </button>
+          )}
         </div>
       </li>
     );

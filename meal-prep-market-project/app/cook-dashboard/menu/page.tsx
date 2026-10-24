@@ -22,8 +22,8 @@ export default async function CookDashboardMenuPage() {
     <div>
       <h1 className="font-display text-3xl">Menu</h1>
       <p className="mt-1 text-ink/70">
-        What clients can order and pay for. Switch an item to Sold out when you can&rsquo;t make it
-        this week.
+        What clients can order. Tap <span className="text-ink">Edit</span> to change a dish, or
+        set it to <span className="text-ink">Sold out</span> when you can&rsquo;t make it this week.
       </p>
       <div className="mt-8">
         <MenuEditor
