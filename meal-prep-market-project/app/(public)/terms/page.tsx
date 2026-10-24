@@ -73,11 +73,12 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="font-display text-xl">5. Subscriptions &amp; billing</h2>
+          <h2 className="font-display text-xl">5. Fees &amp; billing</h2>
           <p className="mt-2">
-            Cook listings include a free trial period, after which continued listing requires a
-            flat monthly subscription. Subscriptions are billed via Stripe. A lapsed payment
-            triggers a grace period before a listing is removed from search.
+            Joining and listing as a cook on Meal Prep Market is free. If you choose to accept
+            card payments through the site (when available), a fee per paid order may apply,
+            and we&rsquo;ll show it to you before you turn this on. We&rsquo;ll always give
+            cooks at least 30 days&rsquo; notice before any change to fees.
           </p>
         </section>
 

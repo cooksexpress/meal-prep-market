@@ -1,11 +1,12 @@
 // components/cook-dashboard/SubscriptionStatusCard.tsx
 //
-// Shows where the cook's listing stands. During the free trial (no card
-// needed) it counts down the days left and nudges them to subscribe.
+// Shows where the cook's listing stands. Most cooks are on a free
+// listing (status "free", migration 011): no card, no time limit.
 
 import Link from "next/link";
 
 export type SubscriptionStatus =
+  | "free"
   | "trialing"
   | "active"
   | "past_due"
@@ -47,13 +48,13 @@ export function SubscriptionStatusCard({
   if (!status) {
     return (
       <div className="rounded-2xl border border-hairline p-6">
-        <p className="font-display text-xl">Your free trial hasn&rsquo;t started</p>
+        <p className="font-display text-xl">Your listing isn&rsquo;t live yet</p>
         <p className="mt-1 text-ink/70">Finish signing up to put your listing live.</p>
         <Link
           href="/onboarding/billing"
           className="mt-4 inline-block rounded-full bg-gold px-5 py-2 text-sm font-medium text-paper"
         >
-          Start free trial
+          Put my listing live
         </Link>
       </div>
     );
@@ -65,6 +66,11 @@ export function SubscriptionStatusCard({
   let offerSubscribe = false;
 
   switch (status) {
+    case "free":
+      label = "Free listing";
+      detail = "Your listing is live and free. No card needed.";
+      tone = "good";
+      break;
     case "trialing": {
       const days = trialEndAt ? daysUntil(trialEndAt) : null;
       label = days !== null ? `Free trial: ${days} ${days === 1 ? "day" : "days"} left` : "Free trial";

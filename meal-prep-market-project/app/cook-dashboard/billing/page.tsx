@@ -97,14 +97,16 @@ export default function CookDashboardBillingPage() {
   }
 
   const hasSubscription = Boolean(subscription?.stripe_subscription_id);
+  // Free listings have nothing to pay for.
   const canSubscribe =
-    !hasSubscription || subscription?.status === "canceled" || subscription?.status === "delisted";
+    subscription?.status !== "free" &&
+    (!hasSubscription || subscription?.status === "canceled" || subscription?.status === "delisted");
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="font-display text-3xl">Billing</h1>
-        <p className="mt-1 text-ink/70">Your free trial, subscription, card, and invoices.</p>
+        <p className="mt-1 text-ink/70">Your listing plan, and any card and invoices.</p>
       </div>
 
       {justSubscribed && (

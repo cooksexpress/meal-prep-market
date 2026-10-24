@@ -11,7 +11,7 @@ import { EmailCodeSignIn } from "@/components/auth/EmailCodeSignIn";
 // A few reasons to join, shown right above the email box. Keep every
 // line true: no customer numbers, no promise of ranking on Google.
 const benefits = [
-  "Free for 3 months, no card needed",
+  "Free to join, no card needed",
   "Customers message you directly with their name, email and phone",
   "Your own page that Google can find",
   "Set up in minutes: a photo, dish name and price",
@@ -22,7 +22,9 @@ export default function OnboardingEntryPage() {
   return (
     <main className="mx-auto max-w-md px-6 py-16">
       <h1 className="font-display text-4xl">Welcome, cooks</h1>
-      <p className="mt-3 text-ink/70">Get more meal prep customers on the Gold Coast.</p>
+      <p className="mt-3 text-ink/70">
+        It&rsquo;s free to join. Help the Gold Coast eat better, and get more meal prep customers.
+      </p>
 
       <ul className="mt-6 space-y-2 rounded-2xl border border-gold/40 bg-gold/5 p-5">
         {benefits.map((benefit) => (

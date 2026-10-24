@@ -37,7 +37,9 @@ export function CookBillingTable({ rows }: { rows: CookBillingRow[] }) {
               </td>
               <td className="py-3 pr-4">{row.status ?? "—"}</td>
               <td className="py-3 pr-4">
-                {row.trial_end_at ? new Date(row.trial_end_at).toLocaleDateString("en-AU") : "—"}
+                {row.trial_end_at && row.status !== "free"
+                  ? new Date(row.trial_end_at).toLocaleDateString("en-AU")
+                  : "—"}
               </td>
               <td className="py-3 pr-4">
                 {row.grace_period_ends_at
