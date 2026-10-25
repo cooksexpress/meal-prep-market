@@ -1,5 +1,6 @@
 // app/cook-dashboard/page.tsx
 
+import { ONLINE_PAYMENTS } from "@/lib/features";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -83,12 +84,17 @@ export default async function CookDashboardOverviewPage() {
       href: "/cook-dashboard/profile#hours",
       hint: "The days and hours you work.",
     },
-    {
-      label: "Bank details",
-      done: Boolean((bankAccount as { charges_enabled: boolean } | null)?.charges_enabled),
-      href: "/cook-dashboard/bank-setup",
-      hint: "So clients can pay you online.",
-    },
+    // Only while online payments are switched on (lib/features.ts).
+    ...(ONLINE_PAYMENTS
+      ? [
+          {
+            label: "Bank details",
+            done: Boolean((bankAccount as { charges_enabled: boolean } | null)?.charges_enabled),
+            href: "/cook-dashboard/bank-setup",
+            hint: "So clients can pay you online.",
+          },
+        ]
+      : []),
   ];
 
   return (

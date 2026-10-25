@@ -8,16 +8,18 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { BackButton } from "@/components/shared/BackButton";
+import { ONLINE_PAYMENTS } from "@/lib/features";
 
+// Orders, Bank Setup and Billing only show when online payments are on.
 const links = [
   { href: "/cook-dashboard", label: "Overview" },
   { href: "/cook-dashboard/menu", label: "Menu" },
   { href: "/cook-dashboard/profile", label: "Profile" },
-  { href: "/cook-dashboard/orders", label: "Orders" },
+  { href: "/cook-dashboard/orders", label: "Orders", payments: true },
   { href: "/cook-dashboard/inquiries", label: "Inquiries" },
-  { href: "/cook-dashboard/bank-setup", label: "Bank Setup" },
-  { href: "/cook-dashboard/billing", label: "Billing" },
-];
+  { href: "/cook-dashboard/bank-setup", label: "Bank Setup", payments: true },
+  { href: "/cook-dashboard/billing", label: "Billing", payments: true },
+].filter((link) => ONLINE_PAYMENTS || !link.payments);
 
 export default async function CookDashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
