@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { SetupChecklist } from "@/components/cook-dashboard/SetupChecklist";
 import { ShareListing } from "@/components/cook-dashboard/ShareListing";
 import { PauseOrdersCard } from "@/components/cook-dashboard/PauseOrdersCard";
+import { ListingStats } from "@/components/cook-dashboard/ListingStats";
+import { callRpc } from "@/lib/stats/rpc";
 import { SubscriptionStatusCard } from "@/components/cook-dashboard/SubscriptionStatusCard";
 import { formatCookDisplayName } from "@/lib/utils/formatCookName";
 
@@ -24,6 +26,7 @@ export default async function CookDashboardOverviewPage() {
     { data: recentInquiries },
     { count: menuCount },
     { data: bankAccount },
+    { data: statsRaw },
   ] = await Promise.all([
     supabase
       .from("cm_cooks")
@@ -45,7 +48,12 @@ export default async function CookDashboardOverviewPage() {
       .limit(5),
     supabase.from("cm_packages").select("id", { count: "exact", head: true }).eq("cook_id", user.id),
     supabase.from("cm_vendor_stripe_accounts").select("charges_enabled").eq("cook_id", user.id).maybeSingle(),
+    callRpc(supabase, "cm_my_view_stats"),
   ]);
+
+  const stats = (Array.isArray(statsRaw) ? statsRaw[0] : null) as
+    | { views_30d: number; views_total: number; enquiries_30d: number; enquiries_total: number }
+    | null;
 
   if (!cook) redirect("/onboarding/tier");
 
@@ -101,6 +109,13 @@ export default async function CookDashboardOverviewPage() {
       </div>
 
       <SetupChecklist items={checklist} />
+
+      <ListingStats
+        views30d={Number(stats?.views_30d ?? 0)}
+        enquiries30d={Number(stats?.enquiries_30d ?? 0)}
+        viewsTotal={Number(stats?.views_total ?? 0)}
+        enquiriesTotal={Number(stats?.enquiries_total ?? 0)}
+      />
 
       <PauseOrdersCard
         cookId={user.id}

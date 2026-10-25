@@ -15,6 +15,7 @@ import { AvailabilityInfo } from "@/components/cook-profile/AvailabilityInfo";
 import { isOrdersPaused } from "@/lib/cooks/availability";
 import { ReviewList } from "@/components/cook-profile/ReviewList";
 import { InquiryForm } from "@/components/cook-profile/InquiryForm";
+import { RecordView } from "@/components/shared/RecordView";
 import { formatCookDisplayName } from "@/lib/utils/formatCookName";
 import type { Cook, Package, Review } from "@/lib/types/database";
 
@@ -102,6 +103,7 @@ export default async function CookProfilePage({ params }: CookProfilePageProps) 
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
+      <RecordView kind="cook" cookId={cook.id} />
       <ProfileHeader cook={cook} averageRating={averageRating} reviewCount={reviewCount} />
       <AvailabilityInfo cook={cook} paused={paused} />
       {canOrderOnline ? (

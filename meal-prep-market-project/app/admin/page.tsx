@@ -31,8 +31,8 @@ export default async function AdminBillingOverviewPage() {
 
   return (
     <div>
-      <h1 className="font-display text-3xl">Billing overview</h1>
-      <p className="mt-1 text-ink/70">Every cook and their current subscription status.</p>
+      <h1 className="font-display text-3xl">Cooks</h1>
+      <p className="mt-1 text-ink/70">Every cook, whether their listing is live, and their plan.</p>
       <div className="mt-8">
         <CookBillingTable rows={rows} />
       </div>

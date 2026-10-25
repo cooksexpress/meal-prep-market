@@ -9,14 +9,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen">
       <nav className="border-b border-hairline bg-ink text-paper">
-        <div className="mx-auto flex max-w-4xl items-center gap-6 px-6 py-4">
+        <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-x-6 gap-y-2 px-6 py-4">
           <span className="font-display text-lg">Admin</span>
-          <div className="flex gap-4 font-mono text-xs uppercase tracking-wide text-paper/70">
+          <div className="flex flex-wrap gap-4 font-mono text-xs uppercase tracking-wide text-paper/70">
+            <Link href="/admin/stats" className="hover:text-paper">
+              Visitors
+            </Link>
             <Link href="/admin" className="hover:text-paper">
-              Billing overview
+              Cooks
             </Link>
             <Link href="/admin/moderation" className="hover:text-paper">
               Moderation
+            </Link>
+            <Link href="/" className="hover:text-paper">
+              Back to site
             </Link>
           </div>
         </div>

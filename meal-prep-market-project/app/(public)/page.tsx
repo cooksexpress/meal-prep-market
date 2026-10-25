@@ -11,6 +11,7 @@ import Link from "next/link";
 import { FilterBar } from "@/components/search/FilterBar";
 import { SearchResultsGrid } from "@/components/search/SearchResultsGrid";
 import { ResultsGridSkeleton } from "@/components/search/ResultsGridSkeleton";
+import { RecordView } from "@/components/shared/RecordView";
 
 interface HomePageProps {
   searchParams: Promise<{ q?: string }>;
@@ -22,6 +23,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     <div className="mx-auto max-w-6xl px-6">
+      <RecordView kind="home" />
       <header className="border-b border-hairline py-16">
         <div className="mb-5 flex items-center gap-3">
           <span className="h-px w-8 bg-gold" aria-hidden="true" />

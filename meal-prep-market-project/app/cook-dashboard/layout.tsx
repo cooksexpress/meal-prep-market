@@ -25,6 +25,11 @@ export default async function CookDashboardLayout({ children }: { children: Reac
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Show an "Admin" link to site admins (cm_admins only lets you read your own row).
+  const { data: adminRow } = user
+    ? await supabase.from("cm_admins").select("id").eq("id", user.id).maybeSingle()
+    : { data: null };
+
   return (
     <div className="min-h-screen">
       <nav className="border-b border-hairline">
@@ -37,6 +42,11 @@ export default async function CookDashboardLayout({ children }: { children: Reac
               </Link>
             </div>
             <div className="flex items-center gap-4 text-xs">
+              {adminRow && (
+                <Link href="/admin/stats" className="text-gold underline">
+                  Admin
+                </Link>
+              )}
               {user && (
                 <Link href={`/cooks/${user.id}`} className="text-gold underline">
                   View my listing
