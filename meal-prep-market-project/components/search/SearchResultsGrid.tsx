@@ -5,16 +5,13 @@
 // Review aggregates are computed here rather than per-card to avoid an
 // N+1 query against cm_reviews for every result.
 //
-// The "q" (allergy/keyword) param is matched against bio, cuisine_tags,
-// dietary_specialty_tags, AND cm_packages.name/description — the last
-// of those requires a separate lookup since packages live in their own
-// table. This is a pragmatic substring (ilike) match, not ranked
-// full-text search — fine for the cook counts expected at MVP scale,
-// but worth upgrading to Postgres full-text search / pg_trgm if the
-// catalog grows large enough that substring scans get slow.
+// The "q" keyword search runs in the database (cm_search_cooks): every
+// word must appear in the cook's name, bio, tags, areas, region, or a
+// menu item. A simple substring match, fine at this scale.
 
 import { createClient } from "@/lib/supabase/server";
 import { CookCard } from "./CookCard";
+import { callRpc } from "@/lib/stats/rpc";
 
 interface SearchResultsGridProps {
   searchParams: {
@@ -25,20 +22,20 @@ interface SearchResultsGridProps {
 export async function SearchResultsGrid({ searchParams }: SearchResultsGridProps) {
   const supabase = await createClient();
 
-  // Escape PostgREST/ilike special characters (%, _, ,) out of
-  // user-supplied text before interpolating into a filter string.
-  const sanitizeForIlike = (value: string) =>
-    value.replace(/[%_,]/g, (char) => `\\${char}`);
-
-  let packageMatchedCookIds: string[] = [];
-  if (searchParams.q) {
-    const keyword = sanitizeForIlike(searchParams.q.trim());
-    const { data: matchedPackages } = await supabase
-      .from("cm_packages")
-      .select("cook_id")
-      .or(`name.ilike.%${keyword}%,description.ilike.%${keyword}%`);
-
-    packageMatchedCookIds = [...new Set((matchedPackages ?? []).map((p) => p.cook_id))];
+  // Search runs in the database (cm_search_cooks, migration 014): every
+  // word typed must appear somewhere in the cook's listing or menu.
+  const q = searchParams.q?.trim().slice(0, 100) ?? "";
+  let matchedIds: string[] | null = null;
+  let searchFailed = false;
+  if (q) {
+    const { data, error: searchError } = await callRpc(supabase, "cm_search_cooks", { p_q: q });
+    if (searchError) {
+      searchFailed = true;
+    } else {
+      matchedIds = ((data ?? []) as unknown[]).map((row) =>
+        typeof row === "string" ? row : String((row as Record<string, unknown>).cm_search_cooks ?? "")
+      );
+    }
   }
 
   let query = supabase
@@ -47,34 +44,14 @@ export async function SearchResultsGrid({ searchParams }: SearchResultsGridProps
     .eq("is_active", true)
     .order("created_at", { ascending: false });
 
-  if (searchParams.q) {
-    const keyword = sanitizeForIlike(searchParams.q.trim());
-    // Union three sources of a match into one OR clause: bio text,
-    // the two tag arrays (cast to text for a substring check), and
-    // any cook whose package name/description matched above.
-    //
-    // NOTE: `column::text.ilike.value` relies on PostgREST's inline
-    // cast support in filter strings. This works on current PostgREST
-    // versions, but verify against your actual deployed Supabase
-    // project before shipping — if it errors, the fallback is to drop
-    // the two tag clauses here and instead pre-filter by tag match in
-    // a separate query the same way packageMatchedCookIds works below.
-    const orClauses = [
-      `business_name.ilike.%${keyword}%`,
-      `bio.ilike.%${keyword}%`,
-      `delivery_areas.ilike.%${keyword}%`,
-      `pickup_area.ilike.%${keyword}%`,
-      `region.ilike.%${keyword}%`,
-      `cuisine_tags::text.ilike.%${keyword}%`,
-      `dietary_specialty_tags::text.ilike.%${keyword}%`,
-    ];
-    if (packageMatchedCookIds.length > 0) {
-      orClauses.push(`id.in.(${packageMatchedCookIds.join(",")})`);
-    }
-    query = query.or(orClauses.join(","));
+  if (matchedIds !== null) {
+    // No matches: ask for an impossible id so the "0 cooks found" message shows.
+    query = query.in("id", matchedIds.length > 0 ? matchedIds : ["00000000-0000-0000-0000-000000000000"]);
   }
 
-  const { data: cooks, error } = await query;
+  const { data: cooksRaw, error: loadError } = await query;
+  const error = searchFailed || loadError;
+  const cooks = cooksRaw;
 
   if (error) {
     return (
