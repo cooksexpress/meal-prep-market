@@ -89,8 +89,10 @@ export async function SearchResultsGrid({ searchParams }: SearchResultsGridProps
 
   return (
     <div>
-      <p className="pt-6 font-mono text-xs uppercase tracking-wide text-ink/50">
-        {cooks.length} {cooks.length === 1 ? "cook" : "cooks"} found
+      <p className="pt-2 font-mono text-xs uppercase tracking-wide text-ink/55">
+        {q
+          ? `${cooks.length} ${cooks.length === 1 ? "cook" : "cooks"} found`
+          : `${cooks.length} local ${cooks.length === 1 ? "cook" : "cooks"}`}
       </p>
       <div className="grid grid-cols-1 gap-6 py-4 sm:grid-cols-2 lg:grid-cols-3">
         {cooks.map((cook) => {

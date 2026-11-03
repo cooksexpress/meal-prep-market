@@ -14,8 +14,18 @@ interface CookCardProps {
   reviewCount: number;
 }
 
+// Tags like "Any" or "None" don't tell customers anything, so skip them.
+const EMPTY_TAGS = new Set(["any", "none", "n/a", "na", "-"]);
+const realTags = (tags: string[]) => tags.filter((t) => t.trim() && !EMPTY_TAGS.has(t.trim().toLowerCase()));
+
 export function CookCard({ cook, averageRating, reviewCount }: CookCardProps) {
   const priceLabel = priceFromLabel(cook.price_range_min);
+  // One tidy line: area, then up to one cuisine and one dietary tag.
+  const meta = [
+    cook.region ? `📍 ${cook.region}` : null,
+    realTags(cook.cuisine_tags)[0] ?? null,
+    realTags(cook.dietary_specialty_tags)[0] ?? null,
+  ].filter(Boolean) as string[];
 
   return (
     <Link
@@ -46,27 +56,32 @@ export function CookCard({ cook, averageRating, reviewCount }: CookCardProps) {
         )}
       </div>
 
-      <div className="space-y-2 p-4">
+      <div className="p-4">
         <h3 className="font-display text-xl leading-tight">{formatCookDisplayName(cook)}</h3>
-        {cook.region && <p className="text-sm text-ink/60">📍 {cook.region}</p>}
-        {reviewCount > 0 ? (
-          <StarRating rating={averageRating} reviewCount={reviewCount} size="sm" />
-        ) : (
-          <span className="inline-block rounded-full border border-gold/60 px-2.5 py-0.5 text-xs text-gold">
-            New to Meal Prep Market
-          </span>
+        {meta.length > 0 && (
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-sm text-ink/65">
+            {meta.map((item, i) => (
+              <span key={item} className="flex items-center gap-2">
+                {i > 0 && (
+                  <span className="text-ink/30" aria-hidden="true">
+                    •
+                  </span>
+                )}
+                {item}
+              </span>
+            ))}
+          </p>
         )}
-        <div className="flex flex-wrap gap-1.5">
-          {cook.cuisine_tags.slice(0, 3).map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full border border-hairline px-2.5 py-0.5 font-mono text-[11px] text-ink/70"
-            >
-              {tag}
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          {reviewCount > 0 ? (
+            <StarRating rating={averageRating} reviewCount={reviewCount} size="sm" />
+          ) : (
+            <span className="inline-block rounded-full border border-gold/60 px-2.5 py-0.5 text-xs text-gold">
+              New to Meal Prep Market
             </span>
-          ))}
+          )}
+          <p className="font-mono text-sm text-gold">{priceLabel}</p>
         </div>
-        <p className="font-mono text-sm text-ocean">{priceLabel}</p>
       </div>
     </Link>
   );

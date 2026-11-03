@@ -52,12 +52,12 @@ export function ProfileHeader({ cook, averageRating, reviewCount }: ProfileHeade
         {cook.bio && <p className="max-w-2xl text-ink/80">{cook.bio}</p>}
 
         <div className="flex flex-wrap gap-1.5 pt-1">
-          {cook.cuisine_tags.map((tag) => (
+          {cook.cuisine_tags.filter((t) => !["any", "none", "n/a", "na", "-"].includes(t.trim().toLowerCase())).map((tag) => (
             <span key={tag} className="border border-hairline px-2 py-0.5 font-mono text-[11px] text-ink/70">
               {tag}
             </span>
           ))}
-          {cook.dietary_specialty_tags.map((tag) => (
+          {cook.dietary_specialty_tags.filter((t) => !["any", "none", "n/a", "na", "-"].includes(t.trim().toLowerCase())).map((tag) => (
             <span
               key={tag}
               className="border border-ocean/40 bg-ocean/5 px-2 py-0.5 font-mono text-[11px] text-ocean"
