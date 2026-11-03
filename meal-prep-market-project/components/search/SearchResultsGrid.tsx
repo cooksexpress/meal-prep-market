@@ -64,6 +64,7 @@ export async function SearchResultsGrid({ searchParams }: SearchResultsGridProps
       `bio.ilike.%${keyword}%`,
       `delivery_areas.ilike.%${keyword}%`,
       `pickup_area.ilike.%${keyword}%`,
+      `region.ilike.%${keyword}%`,
       `cuisine_tags::text.ilike.%${keyword}%`,
       `dietary_specialty_tags::text.ilike.%${keyword}%`,
     ];

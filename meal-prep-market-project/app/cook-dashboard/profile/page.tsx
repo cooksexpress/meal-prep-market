@@ -26,7 +26,7 @@ export default async function CookDashboardProfilePage() {
   const { data: cook } = await supabase
     .from("cm_cooks")
     .select(
-      "first_name, last_name, business_name, tier, bio, cuisine_tags, dietary_specialty_tags, public_contact_email, public_contact_phone, profile_photo_url, opening_hours, delivery_method, delivery_areas, delivery_days, delivery_fee, pickup_area, order_cutoff_day, order_cutoff_time"
+      "first_name, last_name, business_name, tier, bio, cuisine_tags, dietary_specialty_tags, public_contact_email, public_contact_phone, region, profile_photo_url, opening_hours, delivery_method, delivery_areas, delivery_days, delivery_fee, pickup_area, order_cutoff_day, order_cutoff_time"
     )
     .eq("id", user.id)
     .single();

@@ -7,7 +7,7 @@ export function Footer() {
     <footer className="border-t border-hairline">
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-8">
         <p className="font-mono text-xs text-ink/60">
-          &copy; {new Date().getFullYear()} Meal Prep Market. Gold Coast, QLD. An
+          &copy; {new Date().getFullYear()} Meal Prep Market. Queensland, Australia. An
           advertising directory only — bookings and payment are arranged directly with your cook.
         </p>
         <div className="flex flex-wrap gap-4 font-mono text-xs uppercase tracking-wide text-ink/70">

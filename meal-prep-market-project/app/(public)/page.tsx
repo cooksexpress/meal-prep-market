@@ -28,15 +28,15 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <div className="mb-5 flex items-center gap-3">
           <span className="h-px w-8 bg-gold" aria-hidden="true" />
           <span className="font-mono text-xs uppercase tracking-[0.2em] text-gold">
-            Gold Coast · weekly meal prep
+            Queensland · weekly meal prep
           </span>
         </div>
         <h1 className="max-w-xl font-display text-5xl leading-tight">
           Find a local cook for your <span className="italic text-gold">weekly</span> meal prep
         </h1>
         <p className="mt-4 max-w-md text-lg text-ink/70">
-          Independent Gold Coast cooks — in your kitchen, or delivered to your door. Browse,
-          message, and book directly.
+          Independent local cooks, in your kitchen or delivered to your door. Browse and message
+          cooks directly.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <a

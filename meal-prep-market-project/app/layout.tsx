@@ -32,25 +32,25 @@ export const metadata: Metadata = {
     google: "lldnO2QdwcfquWrYUHyqklz4fP5T79WkRT6Ty01xzZQ",
   },
   title: {
-    default: "Meal Prep Market — Find a local cook, Gold Coast",
+    default: "Meal Prep Market — Find a local meal prep cook in Queensland",
     template: "%s | Meal Prep Market",
   },
   description:
-    "Browse independent Gold Coast cooks for custom weekly meal prep — in-home or delivered.",
+    "Find independent local cooks in Queensland, from the Gold Coast to Brisbane, for custom weekly meal prep, in your kitchen or delivered.",
   openGraph: {
     siteName: "Meal Prep Market",
-    title: "Meal Prep Market — Find a local cook, Gold Coast",
+    title: "Meal Prep Market — Find a local meal prep cook in Queensland",
     description:
-      "Browse independent Gold Coast cooks for custom weekly meal prep — in-home or delivered.",
+      "Find independent local cooks in Queensland, from the Gold Coast to Brisbane, for custom weekly meal prep, in your kitchen or delivered.",
     url: "https://mealprepmarket.com.au",
     locale: "en_AU",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Meal Prep Market — Find a local cook, Gold Coast",
+    title: "Meal Prep Market — Find a local meal prep cook in Queensland",
     description:
-      "Browse independent Gold Coast cooks for custom weekly meal prep — in-home or delivered.",
+      "Find independent local cooks in Queensland, from the Gold Coast to Brisbane, for custom weekly meal prep, in your kitchen or delivered.",
   },
 };
 

@@ -12,6 +12,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Cook } from "@/lib/types/database";
+import { REGIONS } from "@/lib/cooks/regions";
 
 interface ProfileFormProps {
   cookId: string;
@@ -22,6 +23,7 @@ interface ProfileFormProps {
     | "dietary_specialty_tags"
     | "public_contact_email"
     | "public_contact_phone"
+    | "region"
   >;
   // Onboarding needs to move to the next wizard step on save;
   // the dashboard just wants to confirm the save happened in place.
@@ -39,6 +41,8 @@ export function ProfileForm({ cookId, initial, redirectTo, submitLabel }: Profil
   const [dietaryTags, setDietaryTags] = useState(initial.dietary_specialty_tags.join(", "));
   const [contactEmail, setContactEmail] = useState(initial.public_contact_email ?? "");
   const [contactPhone, setContactPhone] = useState(initial.public_contact_phone ?? "");
+  const [region, setRegion] = useState(initial.region ?? "");
+  const [regionMissing, setRegionMissing] = useState(false);
   const [status, setStatus] = useState<"idle" | "submitting" | "saved" | "error">("idle");
 
   function parseTags(value: string): string[] {
@@ -50,6 +54,10 @@ export function ProfileForm({ cookId, initial, redirectTo, submitLabel }: Profil
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!region) {
+      setRegionMissing(true);
+      return;
+    }
     setStatus("submitting");
 
     const { error } = await supabase
@@ -60,6 +68,7 @@ export function ProfileForm({ cookId, initial, redirectTo, submitLabel }: Profil
         dietary_specialty_tags: parseTags(dietaryTags),
         public_contact_email: contactEmail.trim() || null,
         public_contact_phone: contactPhone.trim() || null,
+        region,
       })
       .eq("id", cookId);
 
@@ -77,6 +86,37 @@ export function ProfileForm({ cookId, initial, redirectTo, submitLabel }: Profil
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="flex flex-col gap-2">
+        <span className="font-mono text-xs uppercase tracking-wide text-ink/70">Where are you based?</span>
+        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Where are you based?">
+          {REGIONS.map((option) => (
+            <button
+              key={option}
+              type="button"
+              role="radio"
+              aria-checked={region === option}
+              onClick={() => {
+                setRegion(option);
+                setRegionMissing(false);
+                if (status === "saved") setStatus("idle");
+              }}
+              className={`rounded-full px-4 py-2 text-sm transition-colors ${
+                region === option
+                  ? "bg-gold font-medium text-paper"
+                  : "border border-hairline text-ink/70 hover:border-gold hover:text-gold"
+              }`}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+        {regionMissing && (
+          <p role="alert" className="font-mono text-sm text-paprika">
+            Please choose where you&rsquo;re based.
+          </p>
+        )}
+      </div>
+
       <div className="flex flex-col gap-1">
         <label htmlFor="bio" className="font-mono text-xs uppercase tracking-wide text-ink/70">
           Bio

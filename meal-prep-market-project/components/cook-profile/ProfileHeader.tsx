@@ -39,6 +39,7 @@ export function ProfileHeader({ cook, averageRating, reviewCount }: ProfileHeade
           <h1 className="font-display text-3xl">{formatCookDisplayName(cook)}</h1>
           <TierBadge tier={cook.tier} />
         </div>
+        {cook.region && <p className="text-ink/60">📍 {cook.region}</p>}
 
         {reviewCount > 0 ? (
           <StarRating rating={averageRating} reviewCount={reviewCount} />

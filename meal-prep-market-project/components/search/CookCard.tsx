@@ -48,6 +48,7 @@ export function CookCard({ cook, averageRating, reviewCount }: CookCardProps) {
 
       <div className="space-y-2 p-4">
         <h3 className="font-display text-xl leading-tight">{formatCookDisplayName(cook)}</h3>
+        {cook.region && <p className="text-sm text-ink/60">📍 {cook.region}</p>}
         {reviewCount > 0 ? (
           <StarRating rating={averageRating} reviewCount={reviewCount} size="sm" />
         ) : (

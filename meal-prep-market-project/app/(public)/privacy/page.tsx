@@ -29,14 +29,11 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="font-display text-xl">2. How accounts work — magic link authentication</h2>
+          <h2 className="font-display text-xl">2. Accounts</h2>
           <p className="mt-2">
-            Meal Prep Market does not use passwords. When you submit an inquiry as a
-            guest, we automatically create an account tied to your email address and send you a
-            one-time login link (&ldquo;magic link&rdquo;) so you can view your inquiry history
-            without setting up credentials. Repeat inquiries using the same email are linked to
-            the same account rather than creating duplicates. Your login email is private — it is
-            never shown publicly, including to the cooks you contact.
+            Customers don&rsquo;t need an account or password to send an enquiry. Cooks sign in
+            with a one-time code sent to their email, with no password. Your email address is never
+            shown publicly.
           </p>
         </section>
 
@@ -44,9 +41,11 @@ export default function PrivacyPage() {
           <h2 className="font-display text-xl">3. What we share with cooks</h2>
           <p className="mt-2">
             When you submit an inquiry, the name, email, phone number, and message you provide
-            are shared directly with that cook so they can respond to you. This is the extent of
-            what is shared — we do not sell or share your data with third parties for marketing
-            purposes.
+            are shared directly with that cook so they can respond to you. The Meal Prep Market
+            team can also see enquiries, only to run the site: for example to stop spam, check
+            that enquiries are reaching cooks, and help if something goes wrong. We do not sell
+            your details, share them with third parties for marketing, or use them to market
+            other businesses to you.
           </p>
         </section>
 
@@ -63,7 +62,8 @@ export default function PrivacyPage() {
           <h2 className="font-display text-xl">5. Data storage &amp; security</h2>
           <p className="mt-2">
             Data is stored in Supabase (PostgreSQL) with row-level security restricting access to
-            your own records. Payment information for cook subscriptions is handled entirely by
+            your own records. We count how many times pages on the site are opened, without
+            cookies and without recording who you are. Payment information for cook subscriptions is handled entirely by
             Stripe; we never see or store full card details.
           </p>
         </section>

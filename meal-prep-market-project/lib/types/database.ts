@@ -49,6 +49,7 @@ export type Database = {
           order_cutoff_time: string | null;
           public_contact_email: string | null;
           public_contact_phone: string | null;
+          region: string | null;
           declaration_accepted: boolean;
           declaration_accepted_at: string | null;
           is_active: boolean;
@@ -81,6 +82,7 @@ export type Database = {
           order_cutoff_time?: string | null;
           public_contact_email?: string | null;
           public_contact_phone?: string | null;
+          region?: string | null;
           declaration_accepted?: boolean;
           declaration_accepted_at?: string | null;
           is_active?: boolean;

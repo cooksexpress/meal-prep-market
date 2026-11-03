@@ -20,7 +20,7 @@ export default async function OnboardingProfilePage() {
   const { data: cook } = await supabase
     .from("cm_cooks")
     .select(
-      "bio, cuisine_tags, dietary_specialty_tags, public_contact_email, public_contact_phone, min_order_meals, profile_photo_url, opening_hours, tier, delivery_method, delivery_areas, delivery_days, delivery_fee, pickup_area, order_cutoff_day, order_cutoff_time"
+      "bio, cuisine_tags, dietary_specialty_tags, public_contact_email, public_contact_phone, region, min_order_meals, profile_photo_url, opening_hours, tier, delivery_method, delivery_areas, delivery_days, delivery_fee, pickup_area, order_cutoff_day, order_cutoff_time"
     )
     .eq("id", user.id)
     .single();
