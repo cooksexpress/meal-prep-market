@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { BackButton } from "@/components/shared/BackButton";
 import { ONLINE_PAYMENTS } from "@/lib/features";
+import { LogoMark } from "@/components/shared/LogoMark";
 
 // Orders, Bank Setup and Billing only show when online payments are on.
 const links = [
@@ -39,8 +40,11 @@ export default async function CookDashboardLayout({ children }: { children: Reac
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <BackButton />
-              <Link href="/" className="font-display text-lg">
-                Meal Prep <span className="italic text-gold">Market</span>
+              <Link href="/" className="flex items-center gap-2 whitespace-nowrap font-display text-lg" aria-label="Meal Prep Market home">
+                <LogoMark className="h-7 w-auto shrink-0 sm:h-8" />
+                <span>
+                  Meal Prep <span className="italic text-gold">Market</span>
+                </span>
               </Link>
             </div>
             <div className="flex items-center gap-4 text-xs">

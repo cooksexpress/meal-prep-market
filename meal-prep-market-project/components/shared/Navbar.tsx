@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCookHome } from "@/lib/auth/cookHome";
 import { BackButton } from "./BackButton";
 import { SignOutButton } from "@/components/auth/SignOutButton";
+import { LogoMark } from "./LogoMark";
 
 export async function Navbar() {
   let home: string | null = null;
@@ -33,8 +34,11 @@ export async function Navbar() {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-4 sm:gap-3 sm:px-6 sm:py-5">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <BackButton />
-          <Link href="/" className="font-display text-lg leading-tight tracking-wide sm:text-xl">
-            Meal Prep <span className="italic text-gold">Market</span>
+          <Link href="/" className="flex items-center gap-2 whitespace-nowrap font-display text-[17px] leading-tight tracking-wide sm:text-xl" aria-label="Meal Prep Market home">
+            <LogoMark className="h-7 w-auto shrink-0 sm:h-8" />
+            <span>
+              Meal Prep <span className="italic text-gold">Market</span>
+            </span>
           </Link>
         </div>
         <div className="hidden gap-6 font-mono text-xs uppercase tracking-wide text-ink/70 md:flex">
