@@ -18,6 +18,7 @@ const links = [
   { href: "/cook-dashboard/profile", label: "Profile" },
   { href: "/cook-dashboard/orders", label: "Orders", payments: true },
   { href: "/cook-dashboard/inquiries", label: "Inquiries" },
+  { href: "/cook-dashboard/reviews", label: "Reviews" },
   { href: "/cook-dashboard/bank-setup", label: "Bank Setup", payments: true },
   { href: "/cook-dashboard/billing", label: "Billing", payments: true },
 ].filter((link) => ONLINE_PAYMENTS || !link.payments);

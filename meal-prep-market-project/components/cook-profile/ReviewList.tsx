@@ -36,6 +36,12 @@ export function ReviewList({ reviews, cookId, cookName }: ReviewListProps) {
               {review.review_text && (
                 <p className="mt-2 whitespace-pre-line text-ink/80">{review.review_text}</p>
               )}
+              {review.cook_reply && (
+                <div className="mt-3 rounded-xl border-l-2 border-gold bg-surface px-4 py-3">
+                  <p className="font-mono text-xs uppercase tracking-wide text-gold">Reply from {cookName}</p>
+                  <p className="mt-1 whitespace-pre-line text-sm text-ink/80">{review.cook_reply}</p>
+                </div>
+              )}
               <p className="mt-2 font-mono text-xs text-ink/50">
                 {new Date(review.created_at).toLocaleDateString("en-AU", {
                   year: "numeric",

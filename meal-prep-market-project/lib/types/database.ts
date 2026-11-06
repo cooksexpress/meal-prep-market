@@ -244,6 +244,8 @@ export type Database = {
           is_hidden: boolean;
           hidden_reason: string | null;
           created_at: string;
+          cook_reply: string | null;
+          cook_replied_at: string | null;
         };
         Insert: {
           id?: string;
