@@ -14,7 +14,10 @@ export async function getCookHome(supabase: SupabaseClient, userId: string): Pro
     .maybeSingle();
 
   if (!cook) return null;
-  if (!cook.declaration_accepted) return "/onboarding/declaration";
+  // Sign-up order: kitchen (tier) → profile → go live (declaration +
+  // listing live in one tap). Unfinished cooks pick up at their profile,
+  // which shows what they've already saved.
+  if (!cook.declaration_accepted) return "/onboarding/profile";
 
   const { data: subscription } = await supabase
     .from("cm_subscriptions")

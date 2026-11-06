@@ -89,7 +89,7 @@ export default function OnboardingTierPage() {
       return;
     }
 
-    router.push("/onboarding/declaration");
+    router.push("/onboarding/profile");
   }
 
   if (status === "loading") {
@@ -98,7 +98,7 @@ export default function OnboardingTierPage() {
 
   return (
     <main className="mx-auto max-w-lg px-6 py-16">
-      <p className="font-mono text-xs uppercase tracking-wide text-ink/50">Step 1 of 4</p>
+      <p className="font-mono text-xs uppercase tracking-wide text-ink/50">Step 1 of 3 · about 3 minutes in total</p>
       <h1 className="mt-2 font-display text-3xl">Tell us about your kitchen</h1>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-6">

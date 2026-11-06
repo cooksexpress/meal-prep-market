@@ -36,11 +36,15 @@ export default async function OnboardingProfilePage() {
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">
-      <p className="font-mono text-xs uppercase tracking-wide text-ink/50">Step 3 of 4</p>
+      <p className="font-mono text-xs uppercase tracking-wide text-ink/50">Step 2 of 3</p>
       <h1 className="mt-2 font-display text-3xl">Build your profile</h1>
       <p className="mt-3 text-ink/70">
         This is what clients see when they find you. Add your main photo, then your menu: the
         dishes and packs clients can order, each with its own photo if you like.
+      </p>
+      <p className="mt-3 rounded-xl border border-gold/40 bg-gold/5 px-4 py-3 text-sm text-ink/80">
+        Your progress saves as you go. Just add the basics now: you can add more dishes and change
+        anything later from your dashboard.
       </p>
 
       <section className="mt-10">
@@ -89,7 +93,7 @@ export default async function OnboardingProfilePage() {
       </section>
 
       <section className="mt-10 border-t border-hairline pt-10">
-        <ProfileForm cookId={user.id} initial={cook} redirectTo="/onboarding/billing" submitLabel="Continue" />
+        <ProfileForm cookId={user.id} initial={cook} redirectTo="/onboarding/declaration" submitLabel="Continue to the last step" />
       </section>
     </main>
   );

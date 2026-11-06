@@ -26,9 +26,9 @@ export default function OnboardingFinishPage() {
       setStatus("error");
       setErrorMessage(
         error.message.includes("declaration")
-          ? "Please accept the compliance declaration first (step 2)."
+          ? "Please confirm the checklist on the last step first."
           : error.message.includes("profile")
-          ? "Please finish your profile first (step 3)."
+          ? "Please finish your profile first (step 2)."
           : "Couldn't put your listing live. Please try again."
       );
       return;
@@ -39,7 +39,7 @@ export default function OnboardingFinishPage() {
 
   return (
     <main className="mx-auto max-w-lg px-6 py-16">
-      <p className="font-mono text-xs uppercase tracking-wide text-ink/50">Step 4 of 4</p>
+      <p className="font-mono text-xs uppercase tracking-wide text-ink/50">Step 3 of 3</p>
       <h1 className="mt-2 font-display text-3xl">Put your listing live</h1>
       <p className="mt-3 text-ink/70">
         Joining Meal Prep Market is free. No card needed, and your listing goes live as soon as
