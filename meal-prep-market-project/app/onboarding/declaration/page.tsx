@@ -1,7 +1,7 @@
 // app/onboarding/declaration/page.tsx
 //
 // Last sign-up step: "Go live". A short, friendly checklist (food safety
-// training, insurance, Queensland food rules), one tick box, and one
+// training, insurance, their state's food rules), one tick box, and one
 // button that both records the declaration and puts the listing live
 // (cm_start_free_trial). A "Not sure what you need?" guide explains each
 // item so cooks who aren't set up yet know how to get there.
@@ -16,7 +16,7 @@ import { DeclarationCheckbox } from "@/components/onboarding/DeclarationCheckbox
 const checklist = [
   "I have food safety training (like a Food Safety Supervisor certificate)",
   "I have public liability insurance",
-  "I follow Queensland food rules for the way I cook and deliver (for example, a council food business licence if I need one)",
+  "I follow my state's food rules for the way I cook and deliver (for example, a council food business licence if I need one)",
 ];
 
 export default function OnboardingDeclarationPage() {
@@ -98,7 +98,7 @@ export default function OnboardingDeclarationPage() {
               insurance broker can help you find one.
             </p>
             <p>
-              <span className="font-medium text-ink">Queensland food rules.</span> If you make and
+              <span className="font-medium text-ink">Your state&rsquo;s food rules.</span> If you make and
               sell food from home, you may need a food business licence from your local council.
               Your council&rsquo;s website explains what applies to you.
             </p>

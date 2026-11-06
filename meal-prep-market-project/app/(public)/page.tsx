@@ -12,6 +12,8 @@ import { FilterBar } from "@/components/search/FilterBar";
 import { SearchResultsGrid } from "@/components/search/SearchResultsGrid";
 import { ResultsGridSkeleton } from "@/components/search/ResultsGridSkeleton";
 import { RecordView } from "@/components/shared/RecordView";
+import { createClient } from "@/lib/supabase/server";
+import { AREA_BUTTON_MIN } from "@/lib/cooks/regions";
 
 interface HomePageProps {
   searchParams: Promise<{ q?: string; area?: string }>;
@@ -27,6 +29,23 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const { q, area } = await searchParams;
   const params = { q, area };
 
+  // Cities with enough live cooks get a button (busiest first).
+  let areas: string[] = [];
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.from("cm_cooks").select("region").eq("is_active", true);
+    const counts = new Map<string, number>();
+    for (const row of (data ?? []) as { region: string | null }[]) {
+      if (row.region && !row.region.startsWith("Other")) counts.set(row.region, (counts.get(row.region) ?? 0) + 1);
+    }
+    areas = [...counts.entries()]
+      .filter(([, n]) => n >= AREA_BUTTON_MIN)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name]) => name);
+  } catch {
+    areas = [];
+  }
+
   return (
     <div className="mx-auto max-w-6xl px-5 sm:px-6">
       <RecordView kind="home" />
@@ -34,7 +53,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <div className="mb-3 flex items-center gap-3">
           <span className="h-px w-7 bg-gold" aria-hidden="true" />
           <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-gold">
-            Queensland · weekly meal prep
+            Local cooks · weekly meal prep
           </span>
         </div>
         <h1 className="max-w-2xl font-display text-[2.1rem] leading-[1.12] sm:text-5xl">
@@ -45,7 +64,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </p>
 
         <div className="mt-5">
-          <FilterBar />
+          <FilterBar areas={areas} />
         </div>
 
         <ul className="mt-5 flex flex-wrap justify-between gap-x-4 gap-y-1 border-t border-hairline pt-4 text-xs text-ink/75 sm:justify-start sm:gap-x-8 sm:text-sm">

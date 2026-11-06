@@ -12,10 +12,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { CookCard } from "./CookCard";
 import { callRpc } from "@/lib/stats/rpc";
+import Link from "next/link";
+import { REGIONS } from "@/lib/cooks/regions";
 
 interface SearchResultsGridProps {
   searchParams: {
     q?: string;
+    area?: string;
   };
 }
 
@@ -44,6 +47,12 @@ export async function SearchResultsGrid({ searchParams }: SearchResultsGridProps
     .eq("is_active", true)
     .order("created_at", { ascending: false });
 
+  // City buttons (shown once a city has enough cooks): only cooks there.
+  const area = REGIONS.includes(searchParams.area ?? "") ? searchParams.area! : null;
+  if (area) {
+    query = query.eq("region", area);
+  }
+
   if (matchedIds !== null) {
     // No matches: ask for an impossible id so the "0 cooks found" message shows.
     query = query.in("id", matchedIds.length > 0 ? matchedIds : ["00000000-0000-0000-0000-000000000000"]);
@@ -65,11 +74,23 @@ export async function SearchResultsGrid({ searchParams }: SearchResultsGridProps
     return (
       <div className="py-16 text-center">
         <p className="font-mono text-xs uppercase tracking-wide text-ink/50">0 cooks found</p>
-        <p className="mt-2 font-display text-2xl">No cooks match that search yet</p>
-        <p className="mt-2 text-ink/70">Try widening your search, or check back soon — new cooks join every week.</p>
+        <p className="mt-2 font-display text-2xl">
+          {area ? `No ${area} cooks match that yet` : "No cooks match that search yet"}
+        </p>
+        <p className="mt-2 text-ink/70">Try widening your search, or check back soon. New cooks join every week.</p>
+        {area && (
+          <Link
+            href={q ? `/?q=${encodeURIComponent(q)}` : "/"}
+            scroll={false}
+            className="mt-5 inline-block rounded-full border border-gold px-5 py-2 text-sm text-gold transition-colors hover:bg-gold hover:text-paper"
+          >
+            See all cooks
+          </Link>
+        )}
       </div>
     );
   }
+
 
   // Fetch review aggregates for the returned cooks in one query.
   const cookIds = cooks.map((c) => c.id);

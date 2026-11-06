@@ -23,7 +23,7 @@ export default function OnboardingEntryPage() {
     <main className="mx-auto max-w-md px-6 py-16">
       <h1 className="font-display text-4xl">Welcome, cooks</h1>
       <p className="mt-3 text-ink/70">
-        It&rsquo;s free to join. Help Queensland eat better, and get more meal prep customers.
+        It&rsquo;s free to join. Help your community eat better, and get more meal prep customers.
       </p>
 
       <ul className="mt-6 space-y-2 rounded-2xl border border-gold/40 bg-gold/5 p-5">

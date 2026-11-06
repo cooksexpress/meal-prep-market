@@ -2,7 +2,7 @@
 //
 // The cook's confirmation on the last sign-up step. Plain words, same
 // meaning as before: the cook confirms they have food safety training,
-// insurance and follow Queensland food rules, and that Meal Prep Market
+// insurance and follow their state's food rules, and that Meal Prep Market
 // doesn't check this. (Have the lawyer review this wording.)
 
 "use client";

@@ -39,7 +39,7 @@ export default function DisclaimerPage() {
           <ul className="mt-2 list-disc space-y-1 pl-5">
             <li>Any required food business license or food safety supervisor certification for the way they prepare and deliver food</li>
             <li>Public and products liability insurance</li>
-            <li>Compliance with the Queensland Food Act 2006 and all other applicable food safety and business regulations</li>
+            <li>Compliance with the food safety laws of their state or territory (for example, the Queensland Food Act 2006) and all other applicable food safety and business regulations</li>
           </ul>
         </section>
 

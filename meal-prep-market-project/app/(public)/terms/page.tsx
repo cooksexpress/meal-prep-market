@@ -27,7 +27,7 @@ export default function TermsPage() {
           <h2 className="font-display text-xl">1. What Meal Prep Market is</h2>
           <p className="mt-2">
             Meal Prep Market is an advertising directory that connects clients with
-            independent cooks in Queensland. We do not audit food safety practices, inspect
+            independent cooks in Australia. We do not audit food safety practices, inspect
             kitchens, verify licenses or insurance, employ cooks, or process payment between
             clients and cooks. We are not a party to any booking arrangement made between a
             client and a cook.
@@ -41,7 +41,7 @@ export default function TermsPage() {
             By listing on the platform, a cook confirms they hold all licenses, registrations,
             food handling qualifications, and business/public liability insurance required for
             the way they prepare and deliver food, and that they remain solely responsible for
-            their own compliance with Queensland and Australian law.
+            their own compliance with Australian law, including the laws of their state or territory.
           </p>
         </section>
 

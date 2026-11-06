@@ -85,8 +85,8 @@ export async function generateMetadata({ params }: CookProfilePageProps): Promis
 
   const displayName = formatCookDisplayName(data.cook);
   return {
-    title: `${displayName} — meal prep, ${data.cook.region ?? "Queensland"}`,
-    description: data.cook.bio ?? `Custom weekly meal prep from ${displayName}, ${data.cook.region ?? "Queensland"}.`,
+    title: `${displayName} — meal prep, ${data.cook.region ?? "Australia"}`,
+    description: data.cook.bio ?? `Custom weekly meal prep from ${displayName}, ${data.cook.region ?? "Australia"}.`,
   };
 }
 

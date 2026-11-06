@@ -4,6 +4,8 @@
 // (High protein, Vegan...). Writes to the "q" URL param (debounced) so
 // the results grid, a Server Component, can read it straight from the
 // request. Tapping a highlighted button again clears the search.
+// City buttons (Gold Coast, Sydney...) show only for cities with enough
+// live cooks (worked out on the homepage), and only when 2+ qualify.
 
 "use client";
 
@@ -21,23 +23,27 @@ const QUICK = [
   { label: "🥑 Keto", q: "keto" },
 ];
 
-export function FilterBar() {
+export function FilterBar({ areas = [] }: { areas?: string[] }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const [queryText, setQueryText] = useState(searchParams.get("q") ?? "");
+  const area = searchParams.get("area") ?? "";
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const setQuery = useCallback(
-    (value: string) => {
+  const go = useCallback(
+    (nextQ: string, nextArea: string) => {
       const params = new URLSearchParams();
-      if (value) params.set("q", value);
+      if (nextQ) params.set("q", nextQ);
+      if (nextArea) params.set("area", nextArea);
       const qs = params.toString();
       router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     },
     [pathname, router]
   );
+
+  const setQuery = (value: string) => go(value, area);
 
   useEffect(() => {
     if ((searchParams.get("q") ?? "") === queryText.trim()) return;
@@ -87,6 +93,28 @@ export function FilterBar() {
           );
         })}
       </div>
+      {areas.length >= 2 && (
+        <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Choose a city">
+          {areas.map((option) => {
+            const selected = area === option;
+            return (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => go(queryText.trim(), selected ? "" : option)}
+                className={`rounded-full px-4 py-2 text-sm transition-colors ${
+                  selected
+                    ? "bg-gold font-medium text-paper"
+                    : "border border-gold/50 text-gold hover:bg-gold hover:text-paper"
+                }`}
+              >
+                {selected ? `✓ 📍 ${option}` : `📍 ${option}`}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </form>
   );
 }

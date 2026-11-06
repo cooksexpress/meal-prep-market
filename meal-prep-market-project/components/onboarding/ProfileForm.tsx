@@ -12,7 +12,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Cook } from "@/lib/types/database";
-import { REGIONS } from "@/lib/cooks/regions";
+import { STATES, stateOfRegion } from "@/lib/cooks/regions";
 
 interface ProfileFormProps {
   cookId: string;
@@ -42,6 +42,8 @@ export function ProfileForm({ cookId, initial, redirectTo, submitLabel }: Profil
   const [contactEmail, setContactEmail] = useState(initial.public_contact_email ?? "");
   const [contactPhone, setContactPhone] = useState(initial.public_contact_phone ?? "");
   const [region, setRegion] = useState(initial.region ?? "");
+  const [stateCode, setStateCode] = useState<string>(stateOfRegion(initial.region) ?? "");
+  const areasForState = STATES.find((s) => s.code === stateCode)?.areas ?? [];
   const [regionMissing, setRegionMissing] = useState(false);
   const [status, setStatus] = useState<"idle" | "submitting" | "saved" | "error">("idle");
 
@@ -88,28 +90,57 @@ export function ProfileForm({ cookId, initial, redirectTo, submitLabel }: Profil
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="flex flex-col gap-2">
         <span className="font-mono text-xs uppercase tracking-wide text-ink/70">Where are you based?</span>
-        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Where are you based?">
-          {REGIONS.map((option) => (
+        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Your state or territory">
+          {STATES.map((st) => (
             <button
-              key={option}
+              key={st.code}
               type="button"
               role="radio"
-              aria-checked={region === option}
+              aria-checked={stateCode === st.code}
+              aria-label={st.name}
               onClick={() => {
-                setRegion(option);
+                setStateCode(st.code);
+                if (stateOfRegion(region) !== st.code) setRegion(st.areas.length === 1 ? st.areas[0] : "");
                 setRegionMissing(false);
                 if (status === "saved") setStatus("idle");
               }}
               className={`rounded-full px-4 py-2 text-sm transition-colors ${
-                region === option
+                stateCode === st.code
                   ? "bg-gold font-medium text-paper"
                   : "border border-hairline text-ink/70 hover:border-gold hover:text-gold"
               }`}
             >
-              {option}
+              {st.code}
             </button>
           ))}
         </div>
+        {stateCode && areasForState.length > 1 && (
+          <>
+            <span className="mt-2 text-sm text-ink/70">Your city or area</span>
+            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Your city or area">
+              {areasForState.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  role="radio"
+                  aria-checked={region === option}
+                  onClick={() => {
+                    setRegion(option);
+                    setRegionMissing(false);
+                    if (status === "saved") setStatus("idle");
+                  }}
+                  className={`rounded-full px-4 py-2 text-sm transition-colors ${
+                    region === option
+                      ? "bg-gold font-medium text-paper"
+                      : "border border-hairline text-ink/70 hover:border-gold hover:text-gold"
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
         {regionMissing && (
           <p role="alert" className="font-mono text-sm text-paprika">
             Please choose where you&rsquo;re based.
