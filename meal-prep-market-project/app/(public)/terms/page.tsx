@@ -93,7 +93,36 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="font-display text-xl">7. Changes to these terms</h2>
+          <h2 className="font-display text-xl">7. Using your listing to promote you</h2>
+          <p className="mt-2">
+            When a cook creates a listing, they give Meal Prep Market a free, non-exclusive
+            permission to use their listing content (business name, first name, photos, menu
+            items, prices and descriptions) to promote Meal Prep Market and the cook. This
+            includes our website, social media posts and stories, ads, emails, flyers, and posts
+            on the pages of partner or related businesses, including Cooks Express.
+          </p>
+          <p className="mt-2">
+            By uploading photos, a cook confirms they own them or have permission to use them,
+            including permission from anyone who appears in them.
+          </p>
+          <p className="mt-2">
+            A cook can ask us to stop using their content in new marketing at any time by
+            emailing{" "}
+            <a href="mailto:mealprepmarket@gmail.com" className="underline">
+              mealprepmarket@gmail.com
+            </a>
+            . We&rsquo;ll stop using it in new marketing within 7 days, but we don&rsquo;t have
+            to delete posts that were already published. Removing a listing also ends this
+            permission for new marketing.
+          </p>
+          <p className="mt-2">
+            The cook still owns their content. We only use it to promote the cook and Meal Prep
+            Market.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="font-display text-xl">8. Changes to these terms</h2>
           <p className="mt-2">
             We may update these terms from time to time. Continued use of the platform after an
             update constitutes acceptance of the revised terms.
